@@ -11,7 +11,7 @@ Documentation for the Divergence Framework
 ## Building a new project
 - In your terminal run this from inside your project directory
 
-    `composer install divergence/divergence`
+    `composer require divergence/divergence`
 
 - Copy some directories to bootstrap your project
 
