@@ -28,7 +28,7 @@ Documentation for the Divergence Framework
 
  - Open your `composer.json` and add this config to give yourself a namespace
 
-    ```
+    ``` json
     "autoload": {
 	    "psr-4": {
 		    "project\\": "classes/"
@@ -39,7 +39,7 @@ Documentation for the Divergence Framework
 
  - Open `config/db.php` and give your new project some MySQL database credentials.
  - Create a new class `App` in your classes directory with the filename `App.php`. Simply extend `\Divergence\App`
-    ```
+    ``` php
     <?php
     namespace project;
 
@@ -48,12 +48,12 @@ Documentation for the Divergence Framework
     }
     ```
 - Edit `bootstrap/app.php` and change the `use` at the top to use your new namespace in this case `project\App`.
-    ```
+    ``` php
         <?php
         use project\App as App;
     ```
 - Make a directory in your classes folder called `Controllers` and make a new file named `SiteRequestHandler.php` with these contents:
-    ```
+    ``` php
     <?php
     namespace project\Controllers;
 
