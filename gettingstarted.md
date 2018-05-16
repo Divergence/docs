@@ -1,3 +1,4 @@
+### [⤺ Back to Table of Contents](/#divergence-framework-documentation)
 # Getting Started
 
 ## Server Prerequisites
@@ -37,9 +38,6 @@
     },
     ```
     Remember that your namespace will be whatever you put in for "project". For more details see composer's documentation.
-
-# [⤺ Back to Table of Contents](/#divergence-framework-documentation)
-
 
 ## Configure Database access
 
