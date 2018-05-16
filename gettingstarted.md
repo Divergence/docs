@@ -1,4 +1,4 @@
-### [⤺ Back to Table of Contents](/#divergence-framework-documentation)
+### [⤺ Back to Table of Contents](/README.md#divergence-framework-documentation)
 # Getting Started
 
 ## Server Prerequisites
