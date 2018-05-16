@@ -8,7 +8,7 @@ Documentation for the Divergence Framework
 - Make sure you have composer installed
 
 
-## Building a new project
+## Bootstrap a new project
 - In your terminal run this from inside your project directory
 
     `composer require divergence/divergence`
@@ -21,7 +21,10 @@ Documentation for the Divergence Framework
     cp -R vendor/divergence/divergence/bootstrap ./
     cp -R vendor/divergence/divergence/config ./
     ```
+- Run `php -S localhost:8080 -t ./public/` from your project root directory.
+- Visiting `localhost:8080` in your browser should show a phpinfo dump.
 
+## Establish your classes directory
  - Make a classes directory for yourself
     
     `mkdir classes`
@@ -37,7 +40,11 @@ Documentation for the Divergence Framework
     ```
     Remember that your namespace will be whatever you put in for "project". For more details see composer's documentation.
 
+## Configure Database access
+
  - Open `config/db.php` and give your new project some MySQL database credentials.
+
+ ## Take over control from the framework
  - Create a new class `App` in your classes directory with the filename `App.php`. Simply extend `\Divergence\App`
     ``` php
     <?php
@@ -62,7 +69,3 @@ Documentation for the Divergence Framework
     }
     ```
 - Edit `bootstrap/router.php` and change the one line to say `project\Controllers\SiteRequestHandler::handleRequest();`
-
-
-- Run `php -S localhost:8080 -t ./public/` from your project root directory.
-- Visiting `localhost:8080` in your browser should show a phpinfo dump.
