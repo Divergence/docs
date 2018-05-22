@@ -35,17 +35,17 @@
 - Run `php -S localhost:8080 -t ./public/` from your project root directory.
 - Visiting `localhost:8080` in your browser should show a phpinfo dump.
 
-## Establish your classes directory
- - Make a classes directory for yourself
+    #### Establish your classes directory
+ - Make a source directory for yourself
     
-    `mkdir classes`
+    `mkdir src`
 
  - Open your `composer.json` and add this config to give yourself a namespace
 
     ``` json
     "autoload": {
 	    "psr-4": {
-		    "project\\": "classes/"
+		    "project\\": "src/"
 	    }
     },
     ```
