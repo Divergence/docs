@@ -56,5 +56,31 @@ Utilizing this method it doesn't matter where in the tree the controller is. It 
 
 
 ## RequestHandler
+All Divergence controllers extend from abstract class RequestHandler.
+
+RequestHandler keeps track of the path, where you are in it, and provides utility methods for responding to a request.
+
+#### Response Mode
+```php
+static::$responseMode
+```
+By default respondeMode is set to 'dwoo' which is the template engine of choice for Divergence. You may choose to change $respondeMode to 'json', 'jsonp', or simply 'return'.
+
+| ResponseMode | Description |
+| --- | --- |
+| dwoo | Responds with a dwoo template looking in `App::$ApplicationPath.'/views/'` for a template. |
+| json | Print a JSON string and sends header `Content-type: application/json`. |
+| jsonp | Prints valid JS code that sets a variable `var data` to the data being output. |
+| return | Returns a raw PHP array of the data and TemplatePath. |
+
+#### API Reference
+| Method | Purpose |
+| --- | --- |
+| setPath | Internal method for getting the path from `$_SERVER['REQUEST_URI']`. |
+| peekPath | Returns the next path without moving the marker over. |
+| shiftPath | Returns the next path while moving the marker over. |
+| getPath | Returns the internal array derived from `$_SERVER['REQUEST_URI']`. |
+| unshiftPath($path) | Lets you add a path to the internal path stack. |
+*All of these are protected methods so you can only run them from inside a controller.*
 
 ## Your Own Controllers

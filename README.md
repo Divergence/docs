@@ -21,7 +21,7 @@
 
 - ### [Controllers](/controllers.md#controllers)
     - [Intro to Tree Routing](/controllers.md#intro-to-tree-routing)
-    - RequestHandler
+    - [RequestHandler](/controllers.md#requesthandler)
     - Your Own Controllers
     - RecordsRequestHandler
         - Building an API
