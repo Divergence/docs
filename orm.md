@@ -272,7 +272,141 @@ $Model->History; // array of revisions where ID == 1 ordered by RevisionID
 
 ## Supported Field Types
 
+| Field Type | Database Type | Default Options |
+| --- | --- | --- |
+| int | int | notnull = false, unsigned = true, required = false, $default = null|
+| string | varchar (255) | notnull = false, required = false, $default = null|
+| float | float | notnull = false, unsigned = true, required = false, $default = null|
+| enum | enum | values = [], notnull = false, required = false, $default = null|
+| clob | text | notnull = false, required = false, $default = null |
+| boolean | int (1) | notnull = false, unsigned = true, required = false, $default = null |
+| password | varchar (255) | notnull = false, unsigned = true, required = false, $default = null |
+| timestamp | timestamp | notnull = false, unsigned = true, required = false, $default = null |
+| date | date | notnull = false, unsigned = true, required = false, $default = null |
+| serialized | text | notnull = false, unsigned = true, required = false, $default = null |
+| set | set | notnull = false, unsigned = true, required = false, $default = null |
+| list | list | notnull = false, unsigned = true, required = false, $default = null |
+
+
 ## Canary Model - An Example Utilizing Every Field Type
+```php
+<?php
+namespace App\Models;
+
+use Divergence\Models\Relations;
+use Divergence\Models\Versioning;
+
+/*
+ *  The purpose of this Model is to provide an example of every field type
+ *  hopefully in every possible configuration.
+ *
+ */
+class Canary extends \Divergence\Models\Model
+{
+    use Versioning, Relations;
+    
+    // support subclassing
+    public static $rootClass = __CLASS__;
+    public static $defaultClass = __CLASS__;
+    public static $subClasses = [__CLASS__];
+
+
+    // ActiveRecord configuration
+    public static $tableName = 'canaries';
+    public static $singularNoun = 'canary';
+    public static $pluralNoun = 'canaries';
+    
+    // versioning
+    public static $historyTable = 'canaries_history';
+    public static $createRevisionOnDestroy = true;
+    public static $createRevisionOnSave = true;
+
+    public static $fields = [
+        'ContextID' => [
+            'type' => 'int',
+            'default' => 7,
+        ],
+        'ContextClass' => [
+            'type' => 'enum',
+            'values' => [Tag::class],
+            'default' => Tag::class,
+        ],
+        'DNA' => [
+            'type' => 'clob',
+            'notnull' => true,
+        ],
+        'Name' => [
+            'type' => 'string',
+            'required' => true,
+            'notnull' => true,
+        ],
+        'Handle' => [
+            'type' => 'string',
+            'blankisnull' => true,
+            'notnull' => false,
+        ],
+        'isAlive' => [
+            'type' => 'boolean',
+            'default' => true,
+        ],
+        'DNAHash' => [
+            'type' => 'password',
+        ],
+        'StatusCheckedLast' => [
+            'type' => 'timestamp',
+            'notnull' => false,
+        ],
+        'SerializedData' => [
+            'type' => 'serialized',
+        ],
+        'Colors' => [
+            'type' => 'set',
+            'values' => [
+                "red",
+                "pink",
+                "purple",
+                "deep-purple",
+                "indigo",
+                "blue",
+                "light-blue",
+                "cyan",
+                "teal",
+                "green",
+                "light-green",
+                "lime",
+                "yellow",
+                "amber",
+                "orange",
+                "deep-orange",
+                "brown",
+                "grey",
+                "blue-grey",
+            ],
+        ],
+        'EyeColors' => [
+            'type' => 'list',
+            'delimiter' => '|',
+        ],
+        'Height' => [
+            'type' => 'float',
+        ],
+        'LongestFlightTime' => [
+            'type' => 'int',
+            'notnull' => false,
+        ],
+        'HighestRecordedAltitude' => [
+            'type' => 'uint',
+        ],
+        'ObservationCount' => [
+            'type' => 'integer',
+            'notnull' => true,
+        ],
+        'DateOfBirth' => [
+            'type' => 'date',
+        ],
+    ];
+}
+```
 
 ## Validation
 

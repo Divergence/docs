@@ -29,8 +29,8 @@
     - [Create, Update, and Delete](/orm.md#create-update-and-delete)
     - [Versioning](/orm.md#versioning)
     - Relationships
-    - Supported Field Types
-    - Canary Model - An Example Utilizing Every Field Type
+    - [Supported Field Types](/orm.md#supported-field-types)
+    - [Canary Model - An Example Utilizing Every Field Type](/orm.md#canary-model---an-example-utilizing-every-field-type)
     - Validation
     - Event Binding
     - Advanced Techniques
