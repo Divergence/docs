@@ -27,8 +27,10 @@
     - [Model Architecture](/orm.md#model-architecture)
     - [Making a Basic Model](/orm.md#making-a-basic-model)
     - [Create, Update, and Delete](/orm.md#create-update-and-delete)
-    - Versioning
+    - [Versioning](/orm.md#versioning)
     - Relationships
+    - Supported Field Types
+    - Canary Model - An Example Utilizing Every Field Type
     - Validation
     - Event Binding
     - Advanced Techniques

@@ -5,7 +5,8 @@ Divergence uses a typical ActiveRecord pattern for it's models.
 
 ## Model Architecture
 
-#### Default fields provided by `Divergence\Models\Model`
+#### Extend `Divergence\Models\ActiveRecord` to use no default fields.
+#### Extend `Divergence\Models\Model` to use these default fields.
 | Type | Field | Description |
 -------|-------|-------------|
 |`int` | `ID` | The primary key. |
@@ -13,19 +14,21 @@ Divergence uses a typical ActiveRecord pattern for it's models.
 | `timestamp` | `Created` | Time when the object is created in the database. |
 | `int` | `Creator` | Reserved for use with authentication system. |
 
-#### Extend `Divergence\Models\ActiveRecord` to use no default fields.
 
 #### Traits
 | Trait | Description |
 |-------| ---- |
 | `Divergence\Models\Relations` | Lets you build relationships between models. |
 | `Divergence\Models\Versioning` | Automatically tracks history of all models |
-Classes that use ActiveRecord may optionally use traits  and  to enable relationship features and versioning features respectively.
+---
+Classes that use ActiveRecord may optionally use traits to enable relationship features and versioning features respectively.
 
 #### Object Oriented Architecture
-ActiveRecord will merge `public static $fields` and  `public static $relationships` giving priority to the child. Meaning that you can override an already set field or relationship in a parent class.
+ActiveRecord will merge `public static $fields` and  `public static $relationships` at run-time giving priority to the child. You can override fields in the child class that have already been set by a parent class.
 
-A child class may choose to unset a relationship or field simply by setting the config to null. The key must be the same.
+A child class may choose to unset a relationship or field simply by setting the config to null. A child class may also use a different type for the same database field name.
+
+Overrides must use the key for the field configuration.
 
 You **must** define these seven configurables. (Don't worry most you can copy and paste.)
 
@@ -198,8 +201,78 @@ Tag::delete(1); // returns true if DB::affectedRows > 0
 ```
 
 ## Versioning
+Your model must be defined with a `use Versioning` in it's definition.
+```php
+<?php
+namespace Divergence\Tests\MockSite\Models;
+
+use \Divergence\Models\Model;
+use \Divergence\Models\Versioning;
+
+class Tag extends Model
+{
+    use Versioning;
+```
+
+#### Configurables
+You **must** provide these settings to use versioning.
+```php
+    // versioning
+    static public $historyTable = 'test_history';
+    static public $createRevisionOnDestroy = true;
+    static public $createRevisionOnSave = true;
+```
+If you did not create your tables yet a versioned model will have it's history table automatically created.
+
+If you add versioning support after your main table is already in use you must use the SQL class to build yourself a table creation query.
+
+#### Trait `\Divergence\Models\Versioning` provides these fields.
+
+##### Definition
+```php
+    public static $versioningFields = [
+        'RevisionID' => [
+            'columnName' => 'RevisionID',
+            'type' => 'integer',
+            'unsigned' => true,
+            'notnull' => false,
+        ],
+    ];
+```
+
+#### Trait `\Divergence\Models\Versioning` provides these methods.
+| Method | Purpose |
+| --- | ---|
+| getRevisionsByID | Returns an array of versions of a model by ID and $options config. |
+| getRevisions | Returns an array of versions of a model by $options config. |
+---
+
+#### Trait `\Divergence\Models\Versioning` provides these relationships.
+| Relationship | Type | Purpose |
+| --- | --- | --- |
+| History | History | Pulls old versions of this Model |
+
+##### Definition
+```php
+    'History' => [
+        'type' => 'history',
+        'order' => ['RevisionID' => 'DESC'],
+    ],
+```
+
+##### Example - *Must use the Relational trait*
+```php
+$Model->getByID(1);
+$Model->History; // array of revisions where ID == 1 ordered by RevisionID
+
+($Model->History === $Model->History[0]->History) // returns true
+```
 
 ## Relationships
+
+## Supported Field Types
+
+## Canary Model - An Example Utilizing Every Field Type
 
 ## Validation
 
