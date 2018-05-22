@@ -4,21 +4,16 @@
 - ### [Getting Started](/gettingstarted.md)
     - [Server Prerequisites](/gettingstarted.md#server-prerequisites)
     - [Bootstrap a New Project](/gettingstarted.md#bootstrap-a-new-project)
+    - [How to Bootstrap Manually (Advanced)](/gettingstarted.md#how-to-bootstrap-manually-advanced)
     - [Establish Your Classes Directory](/gettingstarted.md#establish-your-classes-directory)
     - [Configure Database Access](/gettingstarted.md#configure-database-access)
     
-- ### Command Line Tool
-    - Initializing a Project
-    - Building Models from Database
-    - Building API Controllers from Models
-    - 15 Minutes Database to API Guide
-    - Tool Usage Reference
-        - init
-        - status
-        - version
-        - build models [database]
-        - build model [table]
-        - build controller
+- ### [Command Line Tool](/cli.md)
+    - [Installation](/cli.md#installation)
+    - [Initializing a Project](/cli.md#initializing-a-project)
+    - [Testing Your Database Config](/cli.md#testing-your-database-config)
+    - [Change Your Database Config](/cli.md#change-your-database-config)
+    - [Tool Usage Reference](/cli.md#tool-usage-reference)
 
 - ### Project Structure
     - Folder Structure

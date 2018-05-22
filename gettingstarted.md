@@ -6,8 +6,20 @@
 - Install PHP 7.1
 - Make sure you have composer installed
 
-
 ## Bootstrap a new project
+- It is recommended that you install and use the divergence command line tool to bootstrap your project. If you wish to do this manually feel free to look in the section ahead.
+    ```
+    composer global require divergence/cli`
+    mkdir project
+    cd project
+    composer init
+    divergence init
+    ```
+    A video of this process is available below.
+    [![asciicast](https://asciinema.org/a/FhE9hATLKDhH7oQfFbeNG5hzs.png)](https://asciinema.org/a/FhE9hATLKDhH7oQfFbeNG5hzs)
+
+## How to Bootstrap Manually (Advanced)
+- Make sure you initialize with composer first.
 - In your terminal run this from inside your project directory
 
     `composer require divergence/divergence`
@@ -42,6 +54,8 @@
 ## Configure Database access
 
  - Open `config/db.php` and give your new project some MySQL database credentials.
+ - You can also use the divergence command line tool for this.
+ [![asciicast](https://asciinema.org/a/gZHWY2tXwjxDgYPvzjIuUjhEX.png)](https://asciinema.org/a/gZHWY2tXwjxDgYPvzjIuUjhEX)
 
  ## Take over control from the framework
  - Create a new class `App` in your classes directory with the filename `App.php`. Simply extend `\Divergence\App`
