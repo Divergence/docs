@@ -196,7 +196,7 @@ For simplicity lets assume we have our api controller at `/blogposts/`.
 
 ##### All of these are accepted as GET or POST
 
-#### Successful Return
+#### Example Return
 `Content-type: application/json`
 ```js
 {
@@ -210,8 +210,8 @@ For simplicity lets assume we have our api controller at `/blogposts/`.
 ```
 
 #### Example
+`$ curl -s http://localhost:8080/api/tags/json | jq`
 ```js
-curl -s http://localhost:8080/api/tags/json | jq
 {
   "success": true,
   "data": [
@@ -278,6 +278,18 @@ curl -s http://localhost:8080/api/tags/json | jq
   "offset": false
 }
 ```
+
+#### Example Failure
+`$ curl -s http://localhost:8080/api/blogposts/json | jq`
+```js
+{
+  "success": false,
+  "failed": {
+    "errors": "API access required."
+  }
+}
+```
+This will be returned if your controller's `checkAPIAccess()` method returns false. It returns true by default.
 
 
 ##### Get One Record
