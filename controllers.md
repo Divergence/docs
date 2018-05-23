@@ -209,6 +209,76 @@ For simplicity lets assume we have our api controller at `/blogposts/`.
 }
 ```
 
+#### Example
+```js
+curl -s http://localhost:8080/api/tags/json | jq
+{
+  "success": true,
+  "data": [
+    {
+      "ID": "1",
+      "Class": "technexus\\Models\\Tag",
+      "Created": 1523869087,
+      "CreatorID": null,
+      "Tag": "ssh",
+      "Slug": "ssh"
+    },
+    {
+      "ID": "2",
+      "Class": "technexus\\Models\\Tag",
+      "Created": 1523870415,
+      "CreatorID": "1",
+      "Tag": "linux",
+      "Slug": "linux"
+    },
+    {
+      "ID": "3",
+      "Class": "technexus\\Models\\Tag",
+      "Created": 1523870424,
+      "CreatorID": "1",
+      "Tag": "osx",
+      "Slug": "osx"
+    },
+    {
+      "ID": "4",
+      "Class": "technexus\\Models\\Tag",
+      "Created": 1523870431,
+      "CreatorID": "1",
+      "Tag": "terminal",
+      "Slug": "terminal"
+    },
+    {
+      "ID": "5",
+      "Class": "technexus\\Models\\Tag",
+      "Created": 1523870455,
+      "CreatorID": "1",
+      "Tag": "bash",
+      "Slug": "bash"
+    },
+    {
+      "ID": "6",
+      "Class": "technexus\\Models\\Tag",
+      "Created": 1524502523,
+      "CreatorID": null,
+      "Tag": "daemon",
+      "Slug": "daemon"
+    },
+    {
+      "ID": "7",
+      "Class": "technexus\\Models\\Tag",
+      "Created": 1524514976,
+      "CreatorID": null,
+      "Tag": "openssh",
+      "Slug": "openssh"
+    }
+  ],
+  "conditions": [],
+  "total": "7",
+  "limit": false,
+  "offset": false
+}
+```
+
 
 ##### Get One Record
 
@@ -222,8 +292,8 @@ For simplicity lets assume we have our api controller at `/blogposts/`.
 ##### Delete One Record
 
 
-#### Create or Edit Multiple Records
+##### Create or Edit Multiple Records
 
 
-#### Delete Multiple Records
+##### Delete Multiple Records
 
