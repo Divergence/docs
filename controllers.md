@@ -176,10 +176,36 @@ trait LoggedIn
 ```
 
 
-## API Reference
-#### API Reference for RecordsRequestHandler
+## JSON API Reference
+##### This API Reference is for classes that extend `Divergence\RecordsRequestHandler`.
 
-##### Browse
+For simplicity lets assume we have our api controller at `/blogposts/`.
+
+### Browse
+`URI: /blogposts/json`
+
+`Method: GET`
+
+#### Parameters
+| Name | Type | Description |
+| --- | --- | --- |
+| offset | number | Position offset in the database. |
+| limit | number | Number of records to pull from offset. |
+| sort | array | An array of order key value pairs. Can also be a JSON string. |
+| filter | array | An array of filter key value pairs. Can also be a JSON string. By default filters will use the `AND` operator. |
+
+#### Successful Return
+`Content-type: application/json`
+```json
+{
+    "success": true,
+    "data":[ /* array of objects corrosponding to your model */ ],
+    "conditions":[], // the calculated conditions for the query based on filters you provided and controller configurables
+    "total":"5", // number of records in the database total
+    "limit":false, // the number of objects actually returned or false if unlimited
+    "offset":false // the offset provided by you
+}
+```
 
 
 ##### Get One Record
