@@ -26,7 +26,7 @@
     - [RecordsRequestHandler](/controllers.md#recordsrequesthandler)
         - [Building an API](/controllers.md#recordsrequesthandler)
         - [Permissions](/controllers.md#permissions)
-        - [API Reference](/controllers.md#api-reference)
+        - [JSON API Reference](/controllers.md#json-api-reference)
     - Advanced Techniques
 
 - ### [ORM](/orm.md#orm)

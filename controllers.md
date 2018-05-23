@@ -184,7 +184,7 @@ For simplicity lets assume we have our api controller at `/blogposts/`.
 ### Browse
 `URI: /blogposts/json`
 
-`Method: GET`
+`Method: GET, POST`
 
 #### Parameters
 | Name | Type | Description |
@@ -194,9 +194,11 @@ For simplicity lets assume we have our api controller at `/blogposts/`.
 | sort | array | An array of order key value pairs. Can also be a JSON string. |
 | filter | array | An array of filter key value pairs. Can also be a JSON string. By default filters will use the `AND` operator. |
 
+##### All of these are accepted as GET or POST
+
 #### Successful Return
 `Content-type: application/json`
-```json
+```js
 {
     "success": true,
     "data":[ /* array of objects corrosponding to your model */ ],
