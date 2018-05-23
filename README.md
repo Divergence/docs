@@ -22,11 +22,11 @@
 - ### [Controllers](/controllers.md#controllers)
     - [Intro to Tree Routing](/controllers.md#intro-to-tree-routing)
     - [RequestHandler](/controllers.md#requesthandler)
-    - Your Own Controllers
-    - RecordsRequestHandler
-        - Building an API
-        - Permissions
-        - Event Binding
+    - [Your Own Controllers](/controllers.md#your-own-controller)
+    - [RecordsRequestHandler](/controllers.md#recordsrequesthandler)
+        - [Building an API](/controllers.md#recordsrequesthandler)
+        - [Permissions](/controllers.md#permissions)
+        - [API Reference](/controllers.md#api-reference)
     - Advanced Techniques
 
 - ### [ORM](/orm.md#orm)

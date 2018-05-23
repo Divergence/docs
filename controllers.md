@@ -81,6 +81,121 @@ By default respondeMode is set to 'dwoo' which is the template engine of choice 
 | shiftPath | Returns the next path while moving the marker over. |
 | getPath | Returns the internal array derived from `$_SERVER['REQUEST_URI']`. |
 | unshiftPath($path) | Lets you add a path to the internal path stack. |
+
 *All of these are protected methods so you can only run them from inside a controller.*
 
 ## Your Own Controllers
+Typically your app should have a Controller namespace under your main Application namespace which means you should have a `src/Controllers` directory. This directory is recommended for storing all your controllers so that they are easy to find. You can create sub directories for various types of controllers.
+
+You should organize your controllers by type or subdivision of your project. For example you might organize controllers related to an admin control panel in a folder called admin.
+
+## Using a third party routing library
+Divergence in no way prevents you from using third-party routing libraries. Simply register the third party library in `project\Controllers\Main::handleRequest();`.
+
+#### Built in controller classes for your conveniance
+| Controller | Description |
+| --- | --- |
+| `RequestHandler` | A basic blank controller. See earlier section. |
+| `RecordsRequestHandler` | Provides a basic CRUD API for Models extending `Divergence\Models\ActiveRecord` |
+
+*Feel free to write your own
+
+## RecordsRequestHandler
+`Divergence\Controllers\RecordsRequestHandler` gives you a pre-made controller for doing REST operations on a `Divergence\Models\ActiveRecord` model.
+
+### Building an API
+*Example class*
+```php
+<?php
+namespace project\Controllers\Records;
+
+class BlogPost extends \Divergence\Controllers\RecordsRequestHandler
+{
+    use Permissions\LoggedIn;
+    
+    public static $recordClass = 'project\\Models\\BlogPost';
+}
+```
+
+### Don't forget to add this controller to another controller's handleRequest tree.
+```php
+public static function handleRequest()
+    {
+        switch ($action = $action ? $action : static::shiftPath()) {
+            case 'blogposts':
+                return project\Controllers\Records\BlogPost::handleRequest();
+```
+
+### Permissions
+
+*Example Trait*
+```php
+<?php
+namespace project\Controllers\Records\Permissions;
+
+use \project\App as App;
+
+use \Divergence\Models\ActiveRecord as ActiveRecord;
+
+trait LoggedIn
+{
+    public static function is()
+    {
+        /*
+         * Here we are simply checking that the user is logged in.
+         * In this case that is all we need to verify their permissions.
+         * Of course you should use your own logic based on the
+         * authentication system you have configured.
+         */
+        return App::$Session->CreatorID ? true : false;
+    }
+    
+    public static function checkBrowseAccess($arguments)
+    {
+        return static::is();
+    }
+
+    public static function checkReadAccess(ActiveRecord $Record)
+    {
+        return static::is();
+    }
+    
+    public static function checkWriteAccess(ActiveRecord $Record)
+    {
+        return static::is();
+    }
+    
+    /*
+     *  have this return false to disable API access entirely
+     */
+    public static function checkAPIAccess()
+    {
+        return static::is();
+    }
+}
+```
+
+
+## API Reference
+#### API Reference for RecordsRequestHandler
+
+##### Browse
+
+
+##### Get One Record
+
+
+##### Edit One Record
+
+
+##### Create One Record
+
+
+##### Delete One Record
+
+
+#### Create or Edit Multiple Records
+
+
+#### Delete Multiple Records
+
