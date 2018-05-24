@@ -452,16 +452,22 @@ Know which field caused the error and why.
 [Click here for many validation definition examples.](/orm.md#validation)
 
 ### Create One Record
-`URI: /tags/json/create`
+`URI: /blogposts/json/create`
 
 `Method: POST`
 
 
 ### Delete One Record
+`URI: /blogposts/json/delete`
 
+`Method: POST, DELETE`
 
 ### Create or Edit Multiple Records
+`URI: /blogposts/json/save`
 
+`METHOD: POST`
 
 ### Delete Multiple Records
+`URI: /blogposts/json/delete`
 
+`METHOD: POST`

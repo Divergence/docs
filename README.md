@@ -29,9 +29,9 @@
         - [JSON API Reference](/controllers.md#json-api-reference)
             - [Browse](/controllers.md#browse) (Read Many)
             - [One Record](/controllers.md#one-record) (Read One)
-            - Edit One Record
-            - Create One Record
-            - Delete One Record
+            - [Edit One Record](/controllers.md#edit-one-record)
+            - [Create One Record](/controllers.md#create-one-record)
+            - [Delete One Record](/controllers.md#delete-one-record)
             - Create or Edit Multiple Records
             - Delete Multiple Records
     - Advanced Techniques
