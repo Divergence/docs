@@ -44,7 +44,7 @@
     - Relationships
     - [Supported Field Types](/orm.md#supported-field-types)
     - [Canary Model - An Example Utilizing Every Field Type](/orm.md#canary-model---an-example-utilizing-every-field-type)
-    - Validation
+    - [Validation](/orm#validation)
     - Event Binding
     - Advanced Techniques
 

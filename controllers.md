@@ -425,6 +425,30 @@ Feel free to use a JSON string as your data payload with `Content-Type: applicat
 }
 ```
 
+Validation failures bubble up from the model cleanly.
+
+`$ curl -d '{"Tag":"J", "Slug":"j"}' -H "Content-Type: application/json" -X POST -s http://localhost:8080/api/tags/json/2/edit | jq`
+
+```js
+{
+  "success": false,
+  "data": {
+    "ID": "2",
+    "Class": "technexus\\Models\\Tag",
+    "Created": 1523870415,
+    "CreatorID": "1",
+    "Tag": "J",
+    "Slug": "j",
+    "validationErrors": {
+      "Tag": "Tag must be at least two characters."
+    }
+  }
+}
+```
+Know which field caused the error and why.
+
+Click here for many validation definition examples.
+
 ### Create One Record
 
 

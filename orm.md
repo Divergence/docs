@@ -409,6 +409,93 @@ class Canary extends \Divergence\Models\Model
 ```
 
 ## Validation
+Validation is available to you through a static config in your model. The config is an array of validator configs. Whenever possible Divergence validators will use built in PHP validator filters.
+
+Validators are evaluated in the order in which they appear and validation stops if there's an error. ActiveRecord will throw a simple `Exception`. Be aware that setting validators will open you up to Exceptions that you should catch.
+
+#### A snippet from ActiveRecord's save method.
+```php
+// validate
+if (!$this->validate($deep)) {
+    throw new Exception('Cannot save invalid record');
+}
+```
+##### Deep is true by default. It will validate loaded relationships as well.
+
+Set validators in your model.
+```php
+public static $validators = [
+    [
+        'field' => 'Name',
+        'required' => true,
+        'errorMessage' => 'Name is required.',
+    ],
+];
+```
+
+### Examples
+---
+
+```php
+[
+    'field' => 'Name',
+    'minlength' => 2,
+    'required' => true,
+    'errorMessage' => 'Name is required.',
+]
+```
+
+```php
+[
+    'field' => 'Name',
+    'maxlength' => 5,
+    'required' => true,
+    'errorMessage' => 'Name is too big. Max 5 characters.',
+]
+```
+
+```php
+[
+    'field' => 'ID',
+    'required' => true,
+    'validator' => 'number',
+    'max' => PHP_INT_MAX,
+    'min' => 1,
+    'errorMessage' => 'ID must be between 0 and PHP_INT_MAX ('.PHP_INT_MAX.')',
+]
+```
+
+```php
+[
+    'field' => 'Float',
+    'required' => true,
+    'validator' => 'number',
+    'max' => 0.759,
+    'min' => 0.128,
+    'errorMessage' => 'ID must be between 0.127 and 0.760',
+]
+```
+
+Email Validation
+```php
+[
+    'field' => 'Email',
+    'required' => true,
+    'validator' => 'email',
+]
+```
+
+Custom Validation
+```php
+[
+    'field' => 'Email',
+    'required' => true,
+    'validator' => [
+        Validate::class,  // this is the actual Validate class that comes with Divergence
+        'email', // so look at this method for an example for how to make your own validator
+    ],
+]
+```
 
 ## Event Binding
 
