@@ -73,7 +73,7 @@ By default if you just have a string that will be treated as the name of the fie
 #### Automatically Create Tables
 If you try to use a Model and the database responds with the error for "table not found" then it will will automatically build you the SQL to create the table, run it, and rerun the original query without throwing an error to the user.
 
-You can disable this behaviour by setting `public static $autoCreateTable` to false in your model.
+You can disable this behavior by setting `public static $autoCreateTable` to false in your model.
 
 
 ## Making a Basic Model
@@ -576,12 +576,12 @@ Every ActiveRecord save will call `$class::$beforeSave` and `$class::$afterSave`
 
 If you set `ActiveRecord::$beforeSave` you can hook into every save for every model on the entire site.
 
-Both `$beforeSave` and `$afterSave` get passed an instance of the object being saved as the only paremeter.
+Both `$beforeSave` and `$afterSave` get passed an instance of the object being saved as the only parameter.
 
 Events are not overriden by child classes. An event will fire for every parent of a child class.
 
 
-#### The two relevent snippets from ActiveRecord's save.
+#### The two relevant snippets from ActiveRecord's save.
 ```php
 foreach (static::$_classBeforeSave as $beforeSave) {
     if (is_callable($beforeSave)) {

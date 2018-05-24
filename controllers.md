@@ -6,7 +6,7 @@ Divergence comes with a suite of controllers to aid in building APIs rapidly as 
 ## Intro to Tree Routing
 Divergence does away with routing configuration files. Instead controllers "take over" a directory path during run time bubbling up from the Main application controller to other controllers until eventually one of the controllers responds to the request and ends the PHP thread.
 
-To illustrate how this works in progress let's take a look at this simple example:
+To illustrate how this works in practice let's take a look at this simple example:
 ```php
 <?php
 namespace application\Controllers;
@@ -64,7 +64,7 @@ RequestHandler keeps track of the path, where you are in it, and provides utilit
 ```php
 static::$responseMode
 ```
-By default respondeMode is set to 'dwoo' which is the template engine of choice for Divergence. You may choose to change $respondeMode to 'json', 'jsonp', or simply 'return'.
+By default responseMode is set to 'dwoo' which is the template engine of choice for Divergence. You may choose to change $responseMode to 'json', 'jsonp', or simply 'return'.
 
 | ResponseMode | Description |
 | --- | --- |
@@ -92,7 +92,7 @@ You should organize your controllers by type or subdivision of your project. For
 ## Using a third party routing library
 Divergence in no way prevents you from using third-party routing libraries. Simply register the third party library in `project\Controllers\Main::handleRequest();`.
 
-### Built in controller classes for your conveniance
+### Built in controller classes for your convenience
 | Controller | Description |
 | --- | --- |
 | `RequestHandler` | A basic blank controller. See earlier section. |
@@ -231,7 +231,7 @@ Specify filter rules with a JSON encoded array.
 ```js
 {
     "success": true,
-    "data":[ /* array of objects corrosponding to your model */ ],
+    "data":[ /* array of objects corresponding to your model */ ],
     "conditions":[], // the calculated conditions for the query based on filters you provided and controller configurables
     "total":"5", // number of records in the database total
     "limit":false, // the number of objects actually returned or false if unlimited

@@ -88,10 +88,10 @@ The MySQL class uses these default database configs.
     public static $defaultDevLabel = 'dev-mysql';
 ```
 
-#### The existance of the .dev file effectively switches your database connection.
+#### The existence of the .dev file effectively switches your database connection.
 #### Tip: You can override these default labels for things like unit tests and continuous integrations before any database connections are established!
 
-This behaviour is part of the `Divergence\App` class.
+This behavior is part of the `Divergence\App` class.
 
 #### This is the first method that runs after composer.
 ```php

@@ -56,11 +56,13 @@
 - ### [Views](/views.md)
     - [Responding with a Template](/views.md#responding-with-a-template)
 
-- ### Security
-    - User model
-    - Session model
-    - Authentication
-    - Binding Permissions
+- ### ~~Security~~
+    - ~~User model~~
+    - ~~Session model~~
+    - ~~Authentication~~
+    - ~~Binding Permissions~~
+
+    **Note:** *While these things are already built (and running in production on many many sites) they are yet to be unit tested so for now they remain on the road map for future versions.*
 
 - ### Developing
     - Clone Framework in Development Mode
@@ -68,6 +70,6 @@
     - Running tests
     - Style Guide
 
-- ### Addendum
-    - Background
+- ### [Addendum](/addendum.md)
+    - [Background](/addendum.md#background)
     - Acknowledgments
