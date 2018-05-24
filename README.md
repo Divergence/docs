@@ -29,7 +29,7 @@
     - [Making a Basic Model](/orm.md#making-a-basic-model)
     - [Create, Update, and Delete](/orm.md#create-update-and-delete)
     - [Versioning](/orm.md#versioning)
-    - Relationships
+    - [Relationships](/orm.md#relationships)
     - [Supported Field Types](/orm.md#supported-field-types)
     - [Canary Model - An Example Utilizing Every Field Type](/orm.md#canary-model---an-example-utilizing-every-field-type)
     - [Validation](/orm.md#validation)
@@ -53,9 +53,8 @@
             - Delete Multiple Records
     - Advanced Techniques
 
-- ### Views
-    - Responding with a Template
-    - Advanced techniques with Views
+- ### [Views](/views.md)
+    - [Responding with a Template](/views.md#responding-with-a-template)
 
 - ### Security
     - User model

@@ -201,7 +201,7 @@ Tag::delete(1); // returns true if DB::affectedRows > 0
 ```
 
 ## Versioning
-Your model must be defined with a `use Versioning` in it's definition.
+Your **model** must be defined with a `use Versioning` in it's definition.
 ```php
 <?php
 namespace Divergence\Tests\MockSite\Models;
@@ -269,6 +269,80 @@ $Model->History; // array of revisions where ID == 1 ordered by RevisionID
 ```
 
 ## Relationships
+Your model **must** be defined with a `use Relationships` in it's definition.
+```php
+<?php
+namespace Divergence\Tests\MockSite\Models;
+
+use \Divergence\Models\Model;
+use \Divergence\Models\Relations;
+
+class Tag extends Model
+{
+    use Relations;
+```
+
+#### Configurables
+You **must** provide relationship configurations in the static variable `$relationships`.
+```php
+    // relationships
+    static public $relationships = [
+    /*
+        'RelationshipName' => [ 
+            .. config ...
+        ]
+        ... more configs
+    */
+    ]
+```
+
+#### Keep in Mind
+- Relationships should not have the same name.
+- The second will override the first.
+- Children classes can override parent classes by setting the class configuration to `null`.
+- Relationship configs will be stacked with priority given to the child class.
+- Relationships are callable by their key name from `$this->$relationshipKey` but model field names take priority!
+
+## Examples
+---
+Both of these are actually doing the same thing. Some fields are assumed.
+#### One-One
+```php
+static public $relationships = [
+    'Thread' => [
+        'class' => Thread::class,
+    ],
+    'ThreadExplicit' => [
+        'type' => 'one-one',
+        'class' => Thread::class,
+        'local' => 'ThreadID',
+        'foreign' => 'ID',
+    ],
+];
+```
+
+#### One-Many
+Feel free to create multiple relationship configurations with different conditions and orders.
+```php
+public static $relationships = [
+    'Threads' => [
+        'type' => 'one-many',
+        'class' => Thread::class,
+        'local' => 'ID',
+        'foreign' => 'CategoryID',
+    ],
+    'ThreadsAlpha' => [
+        'type' => 'one-many',
+        'class' => Thread::class,
+        'local' => 'ID',
+        'foreign' => 'CategoryID',
+        'conditions' => [
+            'Created > DATE_SUB(NOW(), INTERVAL 1 HOUR)',
+        ],
+        'order' => ['Title'=>'ASC'],
+    ],
+];
+```
 
 ## Supported Field Types
 
