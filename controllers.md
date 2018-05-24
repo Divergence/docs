@@ -351,7 +351,79 @@ If you plan to share permissions you should build yourself a permissions trait t
 ```
 
 ### Edit One Record
+`URI: /blogposts/json/:id/edit`
 
+`Method: POST`
+
+### Examples
+Values that do not belong to this model are completely ignored. The record is returned.
+
+`$ curl -d "param1=value1&param2=value2" -X POST -s http://localhost:8080/api/tags/json/2/edit | jq`
+
+```js
+{
+  "success": true,
+  "data": {
+    "ID": "2",
+    "Class": "technexus\\Models\\Tag",
+    "Created": 1523870415,
+    "CreatorID": "1",
+    "Tag": "linux",
+    "Slug": "linux"
+  }
+}
+```
+
+Trying to change the primary key will be ignored.
+`$ curl -d "ID=2" -X POST -s http://localhost:8080/api/tags/json/2/edit | jq`
+
+```js
+{
+  "success": true,
+  "data": {
+    "ID": "2",
+    "Class": "technexus\\Models\\Tag",
+    "Created": 1523870415,
+    "CreatorID": "1",
+    "Tag": "linux",
+    "Slug": "linux"
+  }
+}
+```
+
+Changes will be returned with the record.
+`$ curl -d "Tag=curl&Slug=curl" -X POST -s http://localhost:8080/api/tags/json/2/edit | jq`
+```js
+{
+  "success": true,
+  "data": {
+    "ID": "2",
+    "Class": "technexus\\Models\\Tag",
+    "Created": 1523870415,
+    "CreatorID": "1",
+    "Tag": "curl",
+    "Slug": "curl"
+  }
+}
+```
+
+Feel free to use a JSON string as your data payload with `Content-Type: application/json`
+
+`curl -d '{"Tag":"JSON", "Slug":"json"}' -H "Content-Type: application/json" -X POST -s http://localhost:8080/api/tags/json/2/edit | jq`
+
+```js
+{
+  "success": true,
+  "data": {
+    "ID": "2",
+    "Class": "technexus\\Models\\Tag",
+    "Created": 1523870415,
+    "CreatorID": "1",
+    "Tag": "JSON",
+    "Slug": "json"
+  }
+}
+```
 
 ### Create One Record
 
