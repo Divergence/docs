@@ -477,7 +477,7 @@ The return will provide you with the new primary key and unix timestamp of when 
 ```
 
 ### Delete One Record
-`URI: /blogposts/json/delete`
+`URI: /blogposts/json/:id/delete`
 
 `Method: POST, DELETE`
 
