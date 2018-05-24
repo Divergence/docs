@@ -621,4 +621,4 @@ public static function getAllByTag($slug) {
         );
     } // if
 } // getAllByTag
-----
+```

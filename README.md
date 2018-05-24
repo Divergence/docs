@@ -19,7 +19,10 @@
 - ### [Project Structure](/projectstructure.md)
     - [Load Order](/projectstructure.md#load-order)
     - [Folder Structure](/projectstructure.md#folder-structure)
-    - [Development & Production](/projectstructure.md#development---production))
+    - [The App Class](/projectstructure.md#the-app-class)
+    - [Configs](/projectstructure.md#configs)
+    - [Development & Production](/projectstructure.md#development---production)
+    - [Error Handling](/projectstructure.md#error-handling)
 
 - ### [ORM](/orm.md#orm)
     - [Model Architecture](/orm.md#model-architecture)
