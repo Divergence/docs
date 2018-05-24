@@ -456,11 +456,48 @@ Know which field caused the error and why.
 
 `Method: POST`
 
+The return will provide you with the new primary key and unix timestamp of when it was created.
+
+### Example
+
+`curl $ curl -d '{"Tag":"ActiveRecord", "Slug":"activerecord"}' -H "Content-Type: application/json" -X POST -s http://localhost:8080/api/tags/json/create | jq`
+
+```js
+{
+  "success": true,
+  "data": {
+    "ID": "8",
+    "Class": "technexus\\Models\\Tag",
+    "Created": 1527133465,
+    "CreatorID": null,
+    "Tag": "ActiveRecord",
+    "Slug": "activerecord"
+  }
+}
+```
 
 ### Delete One Record
 `URI: /blogposts/json/delete`
 
 `Method: POST, DELETE`
+
+The return will provide you with the data from the model that was deleted.
+
+`$ curl -H "Content-Type: application/json" -X POST -s http://localhost:8080/api/tags/json/8/delete | jq`
+
+```js
+{
+  "success": true,
+  "data": {
+    "ID": "8",
+    "Class": "technexus\\Models\\Tag",
+    "Created": 1527133465,
+    "CreatorID": null,
+    "Tag": "ActiveRecord",
+    "Slug": "activerecord"
+  }
+}
+```
 
 ### Create or Edit Multiple Records
 `URI: /blogposts/json/save`
