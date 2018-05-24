@@ -7,6 +7,7 @@
     - [How to Bootstrap Manually (Advanced)](/gettingstarted.md#how-to-bootstrap-manually-advanced)
     - [Establish Your Classes Directory](/gettingstarted.md#establish-your-classes-directory)
     - [Configure Database Access](/gettingstarted.md#configure-database-access)
+    - [Configuring nginx or apache2 Servers](/gettingstarted.md#configuring-nginx-or-apache2-servers)
     
 - ### [Command Line Tool](/cli.md)
     - [Installation](/cli.md#installation)
@@ -15,9 +16,22 @@
     - [Change Your Database Config](/cli.md#change-your-database-config)
     - [Tool Usage Reference](/cli.md#tool-usage-reference)
 
-- ### Project Structure
-    - Folder Structure
-    - Production, Development, and Debugging
+- ### [Project Structure](/projectstructure.md)
+    - [Load Order](/projectstructure.md#load-order)
+    - [Folder Structure](/projectstructure.md#folder-structure)
+    - [Development & Production](/projectstructure.md#development---production))
+
+- ### [ORM](/orm.md#orm)
+    - [Model Architecture](/orm.md#model-architecture)
+    - [Making a Basic Model](/orm.md#making-a-basic-model)
+    - [Create, Update, and Delete](/orm.md#create-update-and-delete)
+    - [Versioning](/orm.md#versioning)
+    - Relationships
+    - [Supported Field Types](/orm.md#supported-field-types)
+    - [Canary Model - An Example Utilizing Every Field Type](/orm.md#canary-model---an-example-utilizing-every-field-type)
+    - [Validation](/orm.md#validation)
+    - [Event Binding](/orm.md#event-binding)
+    - [Advanced Techniques](/orm.md#advanced-techniques)
 
 - ### [Controllers](/controllers.md#controllers)
     - [Intro to Tree Routing](/controllers.md#intro-to-tree-routing)
@@ -35,18 +49,6 @@
             - Create or Edit Multiple Records
             - Delete Multiple Records
     - Advanced Techniques
-
-- ### [ORM](/orm.md#orm)
-    - [Model Architecture](/orm.md#model-architecture)
-    - [Making a Basic Model](/orm.md#making-a-basic-model)
-    - [Create, Update, and Delete](/orm.md#create-update-and-delete)
-    - [Versioning](/orm.md#versioning)
-    - Relationships
-    - [Supported Field Types](/orm.md#supported-field-types)
-    - [Canary Model - An Example Utilizing Every Field Type](/orm.md#canary-model---an-example-utilizing-every-field-type)
-    - [Validation](/orm.md#validation)
-    - [Event Binding](/orm.md#event-binding)
-    - [Advanced Techniques](/orm.md#advanced-techniques)
 
 - ### Views
     - Responding with a Template

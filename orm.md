@@ -602,7 +602,7 @@ public getValue($field) {
 }
 
 public static function getAllByTag($slug) {
-    if($Tag = \technexus\Models\Tag::getByField('Slug', $slug)) {
+    if($Tag = Tag::getByField('Slug', $slug)) {
         if (App::is_loggedin()) {
             $where = "`Status` IN ('Draft','Published')";
         } else {

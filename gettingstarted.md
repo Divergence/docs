@@ -82,3 +82,47 @@
     }
     ```
 - Edit `bootstrap/router.php` and change the one line to say `project\Controllers\SiteRequestHandler::handleRequest();`
+
+## Configuring nginx or apache2 Servers
+### nginx
+```nginx
+server {
+    listen 80;
+    listen [::]:80;
+
+    . . .
+
+    root /var/www/yourproject/public;
+    index index.php index.html index.htm index.nginx-debian.html;
+
+    server_name example.com www.example.com;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    . . .
+}
+```
+
+### apache2
+```apache
+<VirtualHost *:80>
+    ServerName example.com
+
+    ServerAdmin webmaster@localhost
+    DocumentRoot /var/www/yourproject/public
+
+    . . .
+
+    <Directory /var/www/yourproject/public>
+        Options Indexes FollowSymLinks MultiViews
+        AllowOverride All
+        Order allow,deny
+        allow from all
+    </Directory>
+    
+    . . .
+    
+</VirtualHost>
+```
