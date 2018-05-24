@@ -375,6 +375,7 @@ Values that do not belong to this model are completely ignored. The record is re
 ```
 
 Trying to change the primary key will be ignored.
+
 `$ curl -d "ID=2" -X POST -s http://localhost:8080/api/tags/json/2/edit | jq`
 
 ```js
@@ -392,6 +393,7 @@ Trying to change the primary key will be ignored.
 ```
 
 Changes will be returned with the record.
+
 `$ curl -d "Tag=curl&Slug=curl" -X POST -s http://localhost:8080/api/tags/json/2/edit | jq`
 ```js
 {
@@ -447,9 +449,12 @@ Validation failures bubble up from the model cleanly.
 ```
 Know which field caused the error and why.
 
-Click here for many validation definition examples.
+[Click here for many validation definition examples.](/orm.md#validation)
 
 ### Create One Record
+`URI: /tags/json/create`
+
+`Method: POST`
 
 
 ### Delete One Record
