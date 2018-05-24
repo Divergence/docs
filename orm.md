@@ -498,5 +498,34 @@ Custom Validation
 ```
 
 ## Event Binding
+Every ActiveRecord save will call `$class::$beforeSave` and `$class::$AfterSave` if they are set to PHP callables.
+
+If you set `ActiveRecord::$beforeSave` you can hook into every save for every model on the entire site.
+
+Both `$beforeSave` and `$afterSave` get passed an instance of the object being saved as the only paremeter.
+
+Events are not overriden by child classes. An event will fire for every parent of a child class.
+
+
+#### The two relevent snippets from ActiveRecord's save.
+```php
+foreach (static::$_classBeforeSave as $beforeSave) {
+    if (is_callable($beforeSave)) {
+        $beforeSave($this);
+    }
+}
+```
+
+```php
+foreach (static::$_classAfterSave as $afterSave) {
+    if (is_callable($afterSave)) {
+        $afterSave($this);
+    }
+}
+```
+
+Please look at `ActiveRecord::_defineEvents()` to see how ActiveRecord builds the event chain.
+
+Please also note that if validation failed `$afterSave` will never fire.
 
 ## Advanced Techniques
