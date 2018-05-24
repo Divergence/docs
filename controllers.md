@@ -42,7 +42,7 @@ application\Controllers\Main::handleRequest();
 
 Typically the name of the application will be different so of course your namespace will be different however projects *should* use the Main controller to take over the root path of their website.
 
-#### About `shiftPath()`
+### About `shiftPath()`
 `shiftPath()` returns the next directory in the request uri every time it is executed.
 For example for this path:
 
@@ -60,7 +60,7 @@ All Divergence controllers extend from abstract class RequestHandler.
 
 RequestHandler keeps track of the path, where you are in it, and provides utility methods for responding to a request.
 
-#### Response Mode
+### Response Mode
 ```php
 static::$responseMode
 ```
@@ -73,7 +73,7 @@ By default respondeMode is set to 'dwoo' which is the template engine of choice 
 | jsonp | Prints valid JS code that sets a variable `var data` to the data being output. |
 | return | Returns a raw PHP array of the data and TemplatePath. |
 
-#### API Reference
+### API Reference
 | Method | Purpose |
 | --- | --- |
 | setPath | Internal method for getting the path from `$_SERVER['REQUEST_URI']`. |
@@ -92,7 +92,7 @@ You should organize your controllers by type or subdivision of your project. For
 ## Using a third party routing library
 Divergence in no way prevents you from using third-party routing libraries. Simply register the third party library in `project\Controllers\Main::handleRequest();`.
 
-#### Built in controller classes for your conveniance
+### Built in controller classes for your conveniance
 | Controller | Description |
 | --- | --- |
 | `RequestHandler` | A basic blank controller. See earlier section. |
@@ -177,7 +177,7 @@ trait LoggedIn
 
 
 ## JSON API Reference
-##### This API Reference is for classes that extend `Divergence\RecordsRequestHandler`.
+This API Reference is for classes that extend `Divergence\RecordsRequestHandler`.
 
 For simplicity lets assume we have our api controller at `/blogposts/`.
 
@@ -186,21 +186,47 @@ For simplicity lets assume we have our api controller at `/blogposts/`.
 
 `Method: GET, POST`
 
-#### Parameters
+### Parameters
 | Name | Type | Description |
 | --- | --- | --- |
 | offset | number | Position offset in the database. |
 | limit | number | Number of records to pull from offset. |
-| sort | array | An array of order key value pairs. Can also be a JSON string. Details below. |
-| filter | array | An array of filter key value pairs. Can also be a JSON string. By default filters will use the `AND` operator. |
+| sort | json array | An array of order key value pairs. |
+| filter | json array | An array of key value pairs. By default filters will use the `AND` operator. |
 
 ##### All of these are accepted as GET or POST
 
-Sorting
+### Example Sorting
+Specify sort rules with a JSON encoded array.
+```php
+[
+    [
+        'property' => 'LastName',
+        'direction' => 'ASC',
+    ],
+    [
+        'property' =>  'FirstName',
+        'direction' =>  'ASC',
+    ]
+]
+```
 
+### Filtering
+Specify filter rules with a JSON encoded array.
+```php
+[
+    [
+        'property' => 'FirstName',
+        'value'     => 'John',
+    ],
+    [
+        'property'  =>  'LastName',
+        'value'     =>  'Doe',
+    ]
+]
+```
 
-
-#### Example Return
+### Example Return
 `Content-type: application/json`
 ```js
 {
@@ -213,7 +239,7 @@ Sorting
 }
 ```
 
-#### Example
+### Example
 `$ curl -s http://localhost:8080/api/tags/json | jq`
 ```js
 {
@@ -283,7 +309,7 @@ Sorting
 }
 ```
 
-#### Example Failure
+### Example Failure
 `$ curl -s http://localhost:8080/api/blogposts/json | jq`
 ```js
 {
@@ -300,14 +326,14 @@ It returns true by default. You must redefine it to setup permissions.
 If you plan to share permissions you should build yourself a permissions trait to re-use.
 
 
-### Get One Record
+### One Record
 `URI: /blogposts/json/:id`
 
 `Method: GET, POST`
 
 
 
-#### Example
+### Example
 `$ curl -s http://localhost:8080/api/tags/json/2 | jq`
 
 ```js
@@ -324,17 +350,17 @@ If you plan to share permissions you should build yourself a permissions trait t
 }
 ```
 
-##### Edit One Record
+### Edit One Record
 
 
-##### Create One Record
+### Create One Record
 
 
-##### Delete One Record
+### Delete One Record
 
 
-##### Create or Edit Multiple Records
+### Create or Edit Multiple Records
 
 
-##### Delete Multiple Records
+### Delete Multiple Records
 

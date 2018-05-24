@@ -27,6 +27,13 @@
         - [Building an API](/controllers.md#recordsrequesthandler)
         - [Permissions](/controllers.md#permissions)
         - [JSON API Reference](/controllers.md#json-api-reference)
+            - [Browse](/controllers.md#browse) (Read Many)
+            - [One Record](/controllers.md#one-record) (Read One)
+            - Edit One Record
+            - Create One Record
+            - Delete One Record
+            - Create or Edit Multiple Records
+            - Delete Multiple Records
     - Advanced Techniques
 
 - ### [ORM](/orm.md#orm)
