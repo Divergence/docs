@@ -191,10 +191,14 @@ For simplicity lets assume we have our api controller at `/blogposts/`.
 | --- | --- | --- |
 | offset | number | Position offset in the database. |
 | limit | number | Number of records to pull from offset. |
-| sort | array | An array of order key value pairs. Can also be a JSON string. |
+| sort | array | An array of order key value pairs. Can also be a JSON string. Details below. |
 | filter | array | An array of filter key value pairs. Can also be a JSON string. By default filters will use the `AND` operator. |
 
 ##### All of these are accepted as GET or POST
+
+Sorting
+
+
 
 #### Example Return
 `Content-type: application/json`
@@ -289,11 +293,36 @@ For simplicity lets assume we have our api controller at `/blogposts/`.
   }
 }
 ```
-This will be returned if your controller's `checkAPIAccess()` method returns false. It returns true by default.
+This will be returned if your controller's `checkAPIAccess()` method returns false.
+
+It returns true by default. You must redefine it to setup permissions.
+
+If you plan to share permissions you should build yourself a permissions trait to re-use.
 
 
-##### Get One Record
+### Get One Record
+`URI: /blogposts/json/:id`
 
+`Method: GET, POST`
+
+
+
+#### Example
+`$ curl -s http://localhost:8080/api/tags/json/2 | jq`
+
+```js
+{
+  "success": true,
+  "data": {
+      "ID": "2",
+      "Class": "technexus\\Models\\Tag",
+      "Created": 1523870415,
+      "CreatorID": "1",
+      "Tag": "linux",
+      "Slug": "linux"
+  }
+}
+```
 
 ##### Edit One Record
 
