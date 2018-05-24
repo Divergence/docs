@@ -498,7 +498,7 @@ Custom Validation
 ```
 
 ## Event Binding
-Every ActiveRecord save will call `$class::$beforeSave` and `$class::$AfterSave` if they are set to PHP callables.
+Every ActiveRecord save will call `$class::$beforeSave` and `$class::$afterSave` if they are set to PHP callables.
 
 If you set `ActiveRecord::$beforeSave` you can hook into every save for every model on the entire site.
 
@@ -529,3 +529,96 @@ Please look at `ActiveRecord::_defineEvents()` to see how ActiveRecord builds th
 Please also note that if validation failed `$afterSave` will never fire.
 
 ## Advanced Techniques
+Here I'll show a few examples of how to use ActiveRecord but still do some custom things with your model.
+
+### Dynamic Fields
+This is a case where you'll want to extend `getValue($field)`.
+
+Here I'm showing different ways of doing it for different reasons.
+```php
+    public getValue($field) {
+        switch($field) {
+            case 'HeightCM':
+                return static::inchesToCM($this->Height);
+            case 'calculateTax':
+                return $this->calculateTaxTotal();
+            default:
+                return parent::getValue($field);
+        }
+    }
+
+    public static function inchesToCM($value)
+    {
+        return $value * 2.54;
+    }
+
+    public function calculateTaxTotal() {
+        $taxTotal = 0;
+        if($state = $this->getStateTaxRate()) {
+            $taxTotal += ($state * $this->Price);
+        }
+        if($local = $this->getLocalTaxRate()) {
+            $taxTotal += ($local * $this->Price);
+        }
+        return $taxTotal;
+    }
+```
+
+### Get Models By Custom Join
+In this example we let the table names come right from the class. One thing less to remember. We also make sure our query only gives us the one model we actually want to instantiate from the data. This way we can do complex conditions on other tables in relation to the model we care about. Here we are pulling all BlogPost objects by TagID.
+
+#### Standalone Example
+
+----
+
+```php
+if (App::is_loggedin()) {
+    $where = "`Status` IN ('Draft','Published')";
+} else {
+    $where = "`Status` IN ('Published')";
+}
+
+$BlogPosts = BlogPost::getAllByQuery(
+    "SELECT `bp`.* FROM `%s` `bp`
+    INNER JOIN %s as `t` ON `t`.`BlogPostID`=`bp`.`ID`
+    WHERE `t`.`TagID`='%s' AND $where",
+    [
+        BlogPost::$tableName,
+        PostTags::$tableName,
+        $Tag->ID,
+    ]
+);
+```
+
+#### Same thing as a Dynamic Field
+```php
+public getValue($field) {
+    switch($field) {
+        case 'getAllByTag':
+            return static::getAllByTag($_REQUEST['tag']);
+        default:
+            return parent::getValue($field);
+    }
+}
+
+public static function getAllByTag($slug) {
+    if($Tag = \technexus\Models\Tag::getByField('Slug', $slug)) {
+        if (App::is_loggedin()) {
+            $where = "`Status` IN ('Draft','Published')";
+        } else {
+            $where = "`Status` IN ('Published')";
+        }
+
+        return static::getAllByQuery(
+            "SELECT `bp`.* FROM `%s` `bp`
+            INNER JOIN %s as `t` ON `t`.`BlogPostID`=`bp`.`ID`
+            WHERE `t`.`TagID`='%s' AND $where",
+            [
+                static::$tableName,
+                PostTags::$tableName,
+                $Tag->ID,
+            ]
+        );
+    } // if
+} // getAllByTag
+----

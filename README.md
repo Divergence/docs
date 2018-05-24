@@ -46,7 +46,7 @@
     - [Canary Model - An Example Utilizing Every Field Type](/orm.md#canary-model---an-example-utilizing-every-field-type)
     - [Validation](/orm.md#validation)
     - [Event Binding](/orm.md#event-binding)
-    - Advanced Techniques
+    - [Advanced Techniques](/orm.md#advanced-techniques)
 
 - ### Views
     - Responding with a Template
