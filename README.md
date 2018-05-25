@@ -64,12 +64,11 @@
 
     **Note:** *While these things are already built (and running in production on many many sites) they are yet to be unit tested so for now they remain on the road map for future versions.*
 
-- ### Developing
-    - Clone Framework in Development Mode
-    - Setting up a unit testing environment
-    - Running tests
-    - Style Guide
+- ### [Developing](/developing.md)
+    - [Get the Source Code](/developing.md#get-the-source-code)
+    - [Unit Testing](/developing.md#unit-testing)
+    - [Style Guide](/developing.md#style-guide)
 
 - ### [Addendum](/addendum.md)
-    - [Background](/addendum.md#background)
+    - [About](/addendum.md#about)
     
