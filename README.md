@@ -72,4 +72,4 @@
 
 - ### [Addendum](/addendum.md)
     - [Background](/addendum.md#background)
-    - Acknowledgments
+    
