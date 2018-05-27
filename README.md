@@ -1,4 +1,7 @@
-# Divergence Framework Documentation
+# [Divergence Framework](https://github.com/Divergence/framework) Documentation
+
+[![Latest Stable Version](https://poser.pugx.org/divergence/divergence/v/stable)](https://packagist.org/packages/divergence/divergence)
+[![License](https://poser.pugx.org/divergence/divergence/license)](https://packagist.org/packages/divergence/divergence)
 
 ## Table of Contents
 - ### [Getting Started](/gettingstarted.md)
