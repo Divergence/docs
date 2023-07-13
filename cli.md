@@ -24,7 +24,7 @@ You can watch a video of the process below
 
 To have a select menu come up with all the database configs run this command.
 
-`divergence test dbconfig`
+`divergence test config`
 
 You can optionally provide the label but if you don't you can select from the menu that comes up.
 
@@ -50,17 +50,16 @@ Divergence Command Line Tool
 
 
         Available Arguments
-        --version, -v		Version information
+        --version, -v           Version information
 
-        help, --help, -h	This help information
+        help, --help, -h        This help information
 
         Available Commands
 
-        init		Bootstraps a new Divergence project.
-        status		Shows information on the current project.
+        init                    Bootstraps a new Divergence project.
+        status                  Shows information on the current project.
 
-        config		database	Reconfigure database setting.
+        config database         Reconfigure database setting.
 
-        test [subcommand]		
-            dbconfig	Checks if DB config works. Asks you to choose a label name or provide one as the next argument.
+        test database           Checks if database configuration works by trying to connect to it. Asks you to choose a label name or provide one as the next argument.
 ```

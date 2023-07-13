@@ -28,13 +28,13 @@ This will route all paths to the one other file in a public directory by default
 * `bootstrap/app.php`
     ```php
     use project\App as App;
-    App::init(realpath(__DIR__.'/../'));
+    $app = new App(realpath(__DIR__.'/../'));
     ```
     Typically you would use your namespace here instead of project with your own App class that extends `Divergence\App`.
 
 * `bootstrap/router.php`
     ```php
-    project\Controllers\SiteRequestHandler::handleRequest();
+    $app->handleRequest();
     ```
     Typically you would use your namespace here as well.
 
@@ -56,7 +56,7 @@ It is highly recommended that you extend the App class or redefine it treating t
 
 ## Configs
 ---
-You can load configs at anytime by calling `$config = App::config('file');` to load `config/file.php`. The return will be whatever the file itself returns.
+You can load configs at anytime by calling `$config = App::$App->config('file');` to load `config/file.php`. The return will be whatever the file itself returns.
 
 ```<?php
 return [ 'some', 'example', 'config' => 'data' ];
@@ -64,9 +64,9 @@ return [ 'some', 'example', 'config' => 'data' ];
 
 Make sure the config exists though because otherwise it will throw an excepton.
 ```php
-    public static function config($Label)
+    public function config($Label)
     {
-        $Config = static::$ApplicationPath . '/config/' . $Label . '.php';
+        $Config = $this->ApplicationPath . '/config/' . $Label . '.php';
         if (!file_exists($Config)) {
             throw new \Exception($Config . ' not found in '.static::class.'::config()');
         }
@@ -95,15 +95,17 @@ This behavior is part of the `Divergence\App` class.
 
 #### This is the first method that runs after composer.
 ```php
-    public static function init($Path)
+    public function init($Path)
     {
-        static::$ApplicationPath = $Path;
-        
-        Controllers\RequestHandler::$templateDirectory = $Path.'/views/';
+        $this->ApplicationPath = $Path;
 
-        static::$Config = static::config('app');
-        
-        static::registerErrorHandler();
+        if (php_sapi_name()!=='cli') {
+            $this->Path = new Path($_SERVER['REQUEST_URI']);
+        }
+
+        $this->Config = $this->config('app');
+
+        $this->registerErrorHandler();
     }
 ```
 
@@ -128,17 +130,17 @@ Production mode sets error_reporting to 0 so that a user does not ever see an er
 It is recommended that you bind your own error handler to log and potentially email critical errors.
 
 ```php
-    public static function registerErrorHandler()
+    public function registerErrorHandler()
     {
         // only show errors in dev environment
-        if (static::$Config['environment'] == 'dev') {
-            static::$whoops = new \Whoops\Run;
-            
-            $Handler = new \Whoops\Handler\PrettyPageHandler;
+        if ($this->Config['environment'] == 'dev') {
+            $this->whoops = new \Whoops\Run();
+
+            $Handler = new \Whoops\Handler\PrettyPageHandler();
             $Handler->setPageTitle("Divergence Error");
-            
-            static::$whoops->pushHandler($Handler);
-            static::$whoops->register();
+
+            $this->whoops->pushHandler($Handler);
+            $this->whoops->register();
         } else {
             error_reporting(0);
         }

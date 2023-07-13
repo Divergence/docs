@@ -18,7 +18,7 @@ Unit tests use this config by default defined in config/db.php
 'tests-mysql' => [
     'host'     =>   'localhost',
     'database' =>  'test',
-    'username' =>  'travis',
+    'username' =>  'root',
     'password' =>  '',
 ]
 ```
@@ -28,22 +28,23 @@ Unit tests use this config by default defined in config/db.php
 ## Unit Testing
 Run `vendor/bin/phpunit --coverage-clover build/logs/clover.xml`
 ```
-PHPUnit 7.1.5 by Sebastian Bergmann and contributors.
+PHPUnit 9.6.9 by Sebastian Bergmann and contributors.
 
-Runtime:       PHP 7.1.16 with Xdebug 2.6.0
-Configuration: /Users/admin/divergence/framework/phpunit.xml
+Runtime:       PHP 8.1.21
+Configuration: /home/akujin/Divergence/framework/phpunit.xml
 
 Summoning Canaries
 Starting Divergence Mock Environment for PHPUnit
-...............................................................  63 / 183 ( 34%)
-............................................................... 126 / 183 ( 68%)
-.........................................................       183 / 183 (100%)
+...............................................................  63 / 201 ( 31%)
+............................................................... 126 / 201 ( 62%)
+............................................................... 189 / 201 ( 94%)
+............                                                    201 / 201 (100%)
 Cleaning up Divergence Mock Environment for PHPUnit
 
 
-Time: 6.78 seconds, Memory: 16.00MB
+Time: 00:00.659, Memory: 16.00 MB
 
-OK (183 tests, 437 assertions)
+OK (201 tests, 474 assertions)
 
 Generating code coverage report in Clover XML format ... done
 ```
@@ -66,11 +67,11 @@ Which then contains
 ```php
     public function startTestSuite(TestSuite $suite): void
     {
-        //printf("TestSuite '%s' started.\n", $suite->getName());
         if ($suite->getName() == 'all') {
-            MySQL::$defaultProductionLabel = 'tests-mysql';
-            App::init(__DIR__.'/../../');
-            App::setUp();
+            $_SERVER['REQUEST_URI'] = '/';
+            $suite->app = new App(__DIR__.'/../../');
+            MySQL::setConnection('tests-mysql');
+            $suite->app->setUp();
             fwrite(STDERR, 'Starting Divergence Mock Environment for PHPUnit'."\n");
         }
     }
@@ -84,7 +85,7 @@ The mock data is generated at random and from the tests themselves but cleared o
 
 ---
 ## Style Guide
-The styles are defined in `.php_cs.dist`
+The styles are defined in `.php_cs.dist.php`
 
 Just run `php-cs-fixer fix`
 
@@ -92,25 +93,33 @@ Currently they are
 ```php
 <?php
 
-$finder = PhpCsFixer\Finder::create()
+$finder = (new PhpCsFixer\Finder())
     //->exclude('somedir')
     ->in(__DIR__)
 ;
 
-return PhpCsFixer\Config::create()
+return (new PhpCsFixer\Config())
     ->setRules([
         '@PSR1' => true,
         '@PSR2' => true,
         'array_syntax' => ['syntax' => 'short'],
         'trailing_comma_in_multiline_array' => true,
+        'no_trailing_comma_in_singleline_array' => true,
         'ternary_operator_spaces' => true,
         'trim_array_spaces' => true,
         'ordered_imports' => [
             'sortAlgorithm' => 'length'
         ],
-        'ordered_class_elements' => true
+        'ordered_class_elements' => true,
+        'indentation_type' => true,
+        'header_comment' => [
+            'header' => $header,
+            'comment_type' => 'PHPDoc',
+            'location' => 'after_open',
+            'separate' => 'none',
+        ]
     ])
-    ->setFinder($finder)
+    ->setFinder($finder)   
 ;
 ```
 Familiarize yourself with php-cs-fixer if you have not already.

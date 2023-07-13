@@ -3,7 +3,7 @@
 
 ## Server Prerequisites
 - Get either nginx or apache2. You can use the built in PHP web server for testing as well.
-- Install PHP 7.1
+- Install PHP 8.0
 - Make sure you have composer installed
 
 ## Bootstrap a new project
@@ -81,7 +81,7 @@
 
     }
     ```
-- Edit `bootstrap/router.php` and change the one line to say `project\Controllers\SiteRequestHandler::handleRequest();`
+- Make sure `bootstrap/router.php` has your app startup `$app->handleRequest();`
 
 ## Configuring nginx or apache2 Servers
 ### nginx

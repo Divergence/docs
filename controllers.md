@@ -11,39 +11,62 @@ To illustrate how this works in practice let's take a look at this simple exampl
 <?php
 namespace application\Controllers;
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+
 class Main extends \Divergence\Controllers\RequestHandler
 {
-    public static function handleRequest()
+    public string $path;
+    protected ServerRequestInterface $request;
+    
+    public function __construct()
     {
-        switch ($action = $action ? $action : static::shiftPath()) {
+        $this->path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    }
+
+    public function handle(ServerRequestInterface $request): ResponseInterface
+    {
+        $this->request = $request;
+        switch ($action = $this->shiftPath()) {
             case 'admin':
-                return Admin::handleRequest();
+                return (new Admin())->handle($request);
                 
             case 'api':
-                return API::handleRequest();
+                return (new API())->handle($request);
+
+            case 'media':
+                return (new Media())->handle($request);
                 
             case 'logout':
-                return static::logout();
-                    
-            case '':
-                return static::home();
-                break;
-
+                return $this->logout();
+                
             default:
-                return static::error();
+                return $this->notfound();
         }
     }
 }
 ```
 By default our file `/public/index.php` will run 
 ```php
-application\Controllers\Main::handleRequest();
+require(__DIR__.'/../bootstrap/autoload.php');
+require(__DIR__.'/../bootstrap/app.php');
+require(__DIR__.'/../bootstrap/router.php');
 ```
 
-Typically the name of the application will be different so of course your namespace will be different however projects *should* use the Main controller to take over the root path of their website.
+Subsequently these 3 requires run this code:
+```php
+use technexus\App as App;
+define('DIVERGENCE_START', microtime(true));
+require(__DIR__.'/../vendor/autoload.php');
 
-### About `shiftPath()`
-`shiftPath()` returns the next directory in the request uri every time it is executed.
+$app = new App(realpath(__DIR__.'/../'));
+$app->handleRequest();
+```
+
+Typically the name of the application will be different so of course your namespace will be different. You *should* extend the App class and write your own handler.
+
+### About `$this->shiftPath()`
+`$this->shiftPath()` returns the next directory in the request uri every time it is executed. The method comes with 
 For example for this path:
 
 `/api/blog/1/edit`
@@ -56,7 +79,7 @@ Utilizing this method it doesn't matter where in the tree the controller is. It 
 
 
 ## RequestHandler
-All Divergence controllers extend from abstract class RequestHandler.
+All Divergence controllers extend from abstract class `Divergence\Controllers\RequestHandler`.
 
 RequestHandler keeps track of the path, where you are in it, and provides utility methods for responding to a request.
 
@@ -97,6 +120,7 @@ Divergence in no way prevents you from using third-party routing libraries. Simp
 | --- | --- |
 | `RequestHandler` | A basic blank controller. See earlier section. |
 | `RecordsRequestHandler` | Provides a basic CRUD API for Models extending `Divergence\Models\ActiveRecord` |
+| `MediaRequestHandler` | Provides a basic CRUD API for Media extending `Divergence\Models\ActiveRecord`. Provides automatic thumbnailing, uploading, and other media features. |
 
 *Feel free to write your own
 
@@ -119,11 +143,22 @@ class BlogPost extends \Divergence\Controllers\RecordsRequestHandler
 
 ### Don't forget to add this controller to another controller's handleRequest tree.
 ```php
-public static function handleRequest()
+    /**
+     * Routes
+     *  /api/blogpost
+     *  /api/tags
+     */
+    public function handle(RequestInterface $request):ResponseInterface
     {
-        switch ($action = $action ? $action : static::shiftPath()) {
-            case 'blogposts':
-                return project\Controllers\Records\BlogPost::handleRequest();
+        switch ($action = $this->shiftPath()) {
+            case 'blogpost':
+                return (new BlogPost())->handle($request);
+
+            case 'tags':
+                return (new Tag())->handle($request);
+            
+        }
+    }
 ```
 
 ### Permissions
@@ -139,7 +174,7 @@ use \Divergence\Models\ActiveRecord as ActiveRecord;
 
 trait LoggedIn
 {
-    public static function is()
+    public function is()
     {
         /*
          * Here we are simply checking that the user is logged in.
@@ -147,32 +182,38 @@ trait LoggedIn
          * Of course you should use your own logic based on the
          * authentication system you have configured.
          */
-        return App::$Session->CreatorID ? true : false;
+        return App::$App->is_loggedin();
     }
     
-    public static function checkBrowseAccess($arguments)
+    public function checkBrowseAccess($arguments)
     {
-        return static::is();
+        return $this->is();
     }
 
-    public static function checkReadAccess(ActiveRecord $Record)
+    public function checkReadAccess(ActiveRecord $Record)
     {
-        return static::is();
+        return $this->is();
     }
     
-    public static function checkWriteAccess(ActiveRecord $Record)
+    public function checkWriteAccess(ActiveRecord $Record)
     {
-        return static::is();
+        return $this->is();
+    }
+
+    public function checkUploadAccess()
+    {
+        return $this->is();
     }
     
     /*
      *  have this return false to disable API access entirely
      */
-    public static function checkAPIAccess()
+    public function checkAPIAccess()
     {
-        return static::is();
+        return $this->is();
     }
 }
+
 ```
 
 

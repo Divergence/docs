@@ -1,25 +1,32 @@
 ### [⤺ Back to Table of Contents](/README.md#divergence-framework-documentation)
 
 # Views
-Divergence uses the [Dwoo Template Engine](https://github.com/dwoo-project/dwoo) as it's primary template engine. It is recommended that you reference Dwoo documentation for details on how to use Dwoo templates. This documentation will discuss helpers for your controllers that will allow you to serve templates at a moment's notice.
+Divergence uses the [Twig Template Engine](https://twig.symfony.com/) as it's primary template engine. It is recommended that you reference Dwoo documentation for details on how to use Dwoo templates. This documentation will discuss helpers for your controllers that will allow you to serve templates at a moment's notice.
 
 #### Architecture
-A typical Divergence project will have a `views/dwoo` folder containing all the Dwoo templates. This is so that if you decide you wish to use Twig or something else you can simply make a folder in `views/` for that template engine instead of having to share a single folder and without having to create a new one in the project root.
+A typical Divergence project will have a `views` folder containing all the Twig templates.
 
 ## Responding with a Template
-You can always use `\Divergence\Controllers\RequestHandler::respond('template.tpl')` from anywhere. It will look for the file in `views/dwoo/template.tpl`.
-
-If you are inside of a controller it's best practice to use `static::respond('template.tpl')` which is much less verbose.
+To generate a Response use a Twig template like so.
+```php
+return new Response(new TwigBuilder('blog/posts.twig', [
+    'BlogPosts' => $BlogPosts,
+    'isLoggedIn' => App::$App->is_loggedin(),
+    'Sidebar' => $this->getSidebarData(),
+    'Limit' => static::LIMIT,
+    'Total' => DB::foundRows(),
+]));
+```
 
 ### Injecting Data - Hello World
 ```php
-static::respond('helloworld.tpl', [
+new Response(new TwigBuilder('helloworld.twig', [
     'text'=>'Hello World'
-]);
+]));
 ```
 
-```smarty
-{$data.text}
+```twig
+{{ text | raw }}
 ```
 
 Will print the classic
