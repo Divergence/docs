@@ -12,6 +12,10 @@
     - [Configure Database Access](/gettingstarted.md#configure-database-access)
     - [Configuring nginx or apache2 Servers](/gettingstarted.md#configuring-nginx-or-apache2-servers)
     
+- ### [Architectural Concepts](/architecture.md)
+    - [Request Respond Emit](/architecture.md#request-respond-emit)
+    - [Tree Routing](/controllers.md#intro-to-tree-routing)
+
 - ### [Command Line Tool](/cli.md)
     - [Installation](/cli.md#installation)
     - [Initializing a Project](/cli.md#initializing-a-project)
@@ -59,11 +63,11 @@
 - ### [Views](/views.md)
     - [Responding with a Template](/views.md#responding-with-a-template)
 
-- ### ~~Security~~
+- ### Security
     - ~~User model~~
     - ~~Session model~~
     - ~~Authentication~~
-    - ~~Binding Permissions~~
+    - [Binding Permissions](/controllers.md#permissions)
 
     **Note:** *While these things are already built (and running in production on many many sites) they are yet to be unit tested so for now they remain on the road map for future versions.*
 
