@@ -88,6 +88,8 @@ The MySQL class uses these default database configs.
     public static $defaultDevLabel = 'dev-mysql';
 ```
 
+Those labels are now resolved through the connection layer, and the framework also ships SQLite configs in `config/db.php`.
+
 #### The existence of the .dev file effectively switches your database connection.
 #### Tip: You can override these default labels for things like unit tests and continuous integrations before any database connections are established!
 
@@ -99,7 +101,7 @@ This behavior is part of the `Divergence\App` class.
     {
         $this->ApplicationPath = $Path;
 
-        if (php_sapi_name()!=='cli') {
+        if (php_sapi_name()!=='cli' || defined('PHPUNIT_TESTSUITE')) {
             $this->Path = new Path($_SERVER['REQUEST_URI']);
         }
 

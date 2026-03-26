@@ -32,7 +32,7 @@ A child class may choose to unset a relationship or field simply by setting the 
 
 Overrides must use the key for the field configuration.
 
-You **must** define these seven configurables. (Don't worry most you can copy and paste.)
+If you are using the older array-mapping style, you will usually define the common class configurables shown in this section. With attribute-based mapping, the framework can infer more of the model structure directly from your class.
 
 #### Subclassing
  ```php
@@ -307,6 +307,277 @@ Otherwise you can define it with attributes like so.
 - Relationship configs will be stacked with priority given to the child class.
 - Relationships are callable by their key name from `$this->$relationshipKey` but model field names take priority!
 
+## Relationships Reference
+This section walks through every supported relationship type in practical terms. The important things to understand are:
+
+- what shape the data has in the database
+- what the relationship returns in PHP
+- which options are required
+- which options the framework infers for you
+
+Internally, the relationship resolver supports:
+
+- `one-one`
+- `one-many`
+- `many-many`
+- `context-parent`
+- `context-children`
+- `history`
+
+### `one-one`
+Use `one-one` when the current record points to exactly one related record.
+
+Common example:
+
+- a `Post` has one `Author`
+- a `Comment` has one `Post`
+- a `Media` record belongs to one specific parent record
+
+Example:
+```php
+#[Relation(
+    type:'one-one',
+    class:User::class,
+    local: 'AuthorID',
+    foreign: 'ID',
+)]
+protected $Author;
+```
+
+What it means:
+
+- `local` is the field on the current model
+- `foreign` is the field on the related model
+- the relationship returns one object or `null`
+
+If you omit `type`, Divergence treats the relationship as `one-one`.
+
+If you omit `local`, Divergence defaults it to `<RelationshipName>ID`.
+
+For example:
+
+```php
+#[Relation(class: Thread::class)]
+protected $Thread;
+```
+
+is treated like:
+
+- `type: 'one-one'`
+- `local: 'ThreadID'`
+- `foreign: 'ID'`
+
+This is the cleanest relationship for “this record belongs to one other record.”
+
+### `one-many`
+Use `one-many` when the current record owns a collection of related records.
+
+Common example:
+
+- a `Category` has many `Thread` records
+- a `Thread` has many `Post` records
+- a `User` has many `Session` records
+
+Example:
+```php
+#[Relation(
+    type:'one-many',
+    class:Thread::class,
+    local: 'ID',
+    foreign: 'CategoryID'
+)]
+protected $Threads;
+```
+
+What it means:
+
+- `local` is usually the current model primary key
+- `foreign` is the field on the child model that points back to this record
+- the relationship returns an array of model objects
+
+Defaults:
+
+- `local` defaults to `ID`
+- `foreign` defaults to `<CurrentRootClassName>ID`
+- `indexField` defaults to `false`
+- `conditions` defaults to `[]`
+- `order` defaults to `false`
+
+That means if the current model class is `Category`, the default child foreign key would be `CategoryID`.
+
+You can also filter and sort the related collection:
+
+```php
+#[Relation(
+    type:'one-many',
+    class:Thread::class,
+    local: 'ID',
+    foreign: 'CategoryID',
+    conditions: [
+        'Created > DATE_SUB(NOW(), INTERVAL 1 HOUR)',
+    ],
+    order: ['Title' => 'ASC']
+)]
+protected $RecentThreads;
+```
+
+Use `one-many` whenever the database design is a normal parent-child foreign key.
+
+### `many-many`
+Use `many-many` when two models are connected through a join table.
+
+Common example:
+
+- posts and tags
+- users and groups
+- records and labels
+
+You need three model classes for this shape:
+
+- the current model
+- the target model
+- the link model
+
+Example:
+```php
+#[Relation(
+    type:'many-many',
+    class:Tag::class,
+    linkClass:PostTags::class,
+    linkLocal: 'PostID',
+    linkForeign: 'TagID',
+    local: 'ID',
+    foreign: 'ID'
+)]
+protected $Tags;
+```
+
+What it means:
+
+- `class` is the final related model you want back
+- `linkClass` is the join model/table
+- `linkLocal` is the join field pointing to the current model
+- `linkForeign` is the join field pointing to the target model
+- `local` is the current model key, usually `ID`
+- `foreign` is the target model key, usually `ID`
+
+Required options:
+
+- `class`
+- `linkClass`
+
+Defaults:
+
+- `linkLocal` defaults to `<CurrentRootClassName>ID`
+- `linkForeign` defaults to `<TargetRootClassName>ID`
+- `local` defaults to `ID`
+- `foreign` defaults to `ID`
+- `indexField` defaults to `false`
+- `conditions` defaults to `[]`
+- `order` defaults to `false`
+
+This relationship returns an array of target model objects, not the join objects.
+
+Use `many-many` when the relationship is truly symmetrical or when either side can have many of the other side.
+
+### `context-parent`
+Use `context-parent` when a record stores a polymorphic parent reference through both:
+
+- `ContextClass`
+- `ContextID`
+
+This is useful when one child model can belong to more than one kind of parent model.
+
+Common example:
+
+- a media record that can belong to different model classes
+- a note or comment that can be attached to different resource types
+
+Example:
+```php
+#[Relation(
+    type:'context-parent',
+    local: 'ContextID',
+    classField: 'ContextClass'
+)]
+protected $Context;
+```
+
+What it means:
+
+- `local` is the field holding the parent ID
+- `classField` is the field holding the fully qualified parent class name
+- the relationship returns one object or `null`
+
+Defaults:
+
+- `local` defaults to `ContextID`
+- `foreign` defaults to `ID`
+- `classField` defaults to `ContextClass`
+- `allowedClasses` defaults to `static::$contextClasses` when present
+
+Use `context-parent` when the parent can vary by class at runtime.
+
+### `context-children`
+Use `context-children` for the inverse of `context-parent`: fetch all child records whose `ContextClass` and `ContextID` point at the current record.
+
+Common example:
+
+- all media attached to a post
+- all comments attached to a thread
+- all secondary records attached to a parent object through contextual ownership
+
+Example:
+```php
+#[Relation(
+    type:'context-children',
+    class:Media::class,
+    local: 'ID',
+    contextClass: Post::class
+)]
+protected $Media;
+```
+
+What it means:
+
+- `class` is the child model class
+- `local` is the field on the current model used as the child `ContextID`
+- `contextClass` is the class name that the child records should match in `ContextClass`
+- the relationship returns an array of child objects
+
+Defaults:
+
+- `local` defaults to `ID`
+- `contextClass` defaults to the current class
+- `indexField` defaults to `false`
+- `conditions` defaults to `[]`
+- `order` defaults to `false`
+
+Use `context-children` when children are polymorphically attached to a parent object.
+
+### `history`
+Use `history` with versioned models to expose prior revisions.
+
+This only makes sense when the model uses the `Versioning` trait and has a configured history table.
+
+Example:
+```php
+'History' => [
+    'type' => 'history',
+    'order' => ['RevisionID' => 'DESC'],
+],
+```
+
+What it means:
+
+- the relationship returns previous revisions of the current record
+- the underlying lookup uses the model's revision helpers
+- the result is an array of historical versions
+
+If no `class` is supplied, the framework defaults it to the current model class for versioned models.
+
+Use `history` when you want revision browsing directly from the model API.
+
 ## Examples
 ---
 Both of these are actually doing the same thing. Some fields are assumed.
@@ -369,6 +640,154 @@ Feel free to create multiple relationship configurations with different conditio
 | set | set | notnull = false, unsigned = true, required = false, $default = null |
 | list | list | notnull = false, unsigned = true, required = false, $default = null |
 
+## ORM Typing Explanation
+This section explains what each field type means in practice, how the framework stores it, and what you should expect when reading and writing values.
+
+### `int`
+`int` is a whole-number type. It is commonly used for foreign keys, counters, and numeric fields that should not contain fractions.
+
+Use `int` when:
+
+- the value should be numeric
+- decimal precision is not needed
+- negative values may or may not be valid depending on config
+
+Typical examples are context IDs, counters, and general integer metadata.
+
+### `integer`
+`integer` is functionally the same family as `int` and is commonly used for explicit integer field declarations.
+
+In practice the docs and examples use both `int` and `integer`. The important thing is not the spelling difference but the meaning: whole-number storage with no decimal component.
+
+Use `integer` when you want a clearly named integer field in your model definition.
+
+### `uint`
+`uint` is an unsigned integer. It should never contain negative values.
+
+Use `uint` when:
+
+- the field represents a count or measurement that cannot go below zero
+- you want the schema itself to reflect that constraint
+
+The `HighestRecordedAltitude` example in the canary model is a good fit for this kind of field.
+
+### `string`
+`string` is the default short text type and usually maps to a `varchar(255)`.
+
+This is the right type for:
+
+- names
+- titles
+- slugs
+- handles
+- short labels
+
+If the value should stay reasonably short and human-readable, `string` is usually correct.
+
+### `clob`
+`clob` is long-form text. Use it for bodies of content, descriptions, or other large text values.
+
+This is appropriate when:
+
+- the value can exceed normal string length
+- truncation would be dangerous
+- you are storing free-form text rather than labels or identifiers
+
+Large article bodies, comments, descriptions, and raw text payloads should generally be `clob`.
+
+### `float`
+`float` stores approximate numeric values with decimals.
+
+Use it for measurements where small floating-point rounding differences are acceptable, such as height or derived values.
+
+Do not use `float` for exact money or accounting values if precision matters. Use `decimal` instead.
+
+### `decimal`
+`decimal` stores exact fixed-point numeric values and takes `precision` and `scale`.
+
+Use it when:
+
+- exact decimal precision matters
+- the number should not drift through floating-point rounding
+- you know the total digits and digits-after-decimal you want to enforce
+
+This is the right choice for prices, money, and exact measured values.
+
+### `enum`
+`enum` restricts a field to one of a predefined set of values.
+
+Use it when the field should only ever contain one value from a controlled list. The `Class` field and `ContextClass` style patterns are common examples.
+
+An `enum` gives you tighter constraints than a free-form `string`, which is useful when invalid values should be impossible at the schema layer.
+
+### `boolean`
+`boolean` stores a true or false value.
+
+Use it for flags and toggles:
+
+- `isAlive`
+- published vs unpublished
+- enabled vs disabled
+
+At the database layer this is usually represented numerically, but the model interface treats it semantically as true or false.
+
+### `password`
+`password` is intended for hashed secrets rather than raw passwords.
+
+This field type signals intent more than structure: the value should be a derived secure value, not plaintext input.
+
+Use it for password hashes and similar sensitive credential material.
+
+### `timestamp`
+`timestamp` represents a time value and is appropriate when time-of-day precision matters.
+
+Use it for:
+
+- created times
+- edited times
+- checked-at times
+- event times
+
+If you care about the exact time, not just the date, `timestamp` is the correct choice.
+
+### `date`
+`date` represents a calendar date without time-of-day precision.
+
+Use it when the day matters but the hour and minute do not:
+
+- birthdays
+- due dates
+- effective dates
+- publication dates without exact timestamp semantics
+
+### `serialized`
+`serialized` stores structured PHP data by serializing it into text.
+
+Use it when:
+
+- the value is structured
+- the structure varies too much for clean column mapping
+- SQL-level querying inside the value is not important
+
+It trades relational clarity for flexibility, so it is best used intentionally rather than by default.
+
+### `set`
+`set` stores a collection of values chosen from a predefined allowed list.
+
+Use it when a field can contain multiple values but every value must come from a controlled vocabulary.
+
+This is useful for things like color sets, feature flags, or multi-select labels where arbitrary input would be a mistake.
+
+### `list`
+`list` stores an ordered list of values separated by a delimiter.
+
+Use it when:
+
+- the field contains multiple values
+- order matters or is useful
+- you do not need a normalized join table
+
+This is lighter than a full relationship, but also less queryable. It works best for small ordered collections such as the `EyeColors` example.
 
 ## Canary Model - An Example Utilizing Every Field Type
 ```php

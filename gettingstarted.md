@@ -3,13 +3,13 @@
 
 ## Server Prerequisites
 - Get either nginx or apache2. You can use the built in PHP web server for testing as well.
-- Install PHP 8.0
+- Install PHP 8.1 or newer
 - Make sure you have composer installed
 
 ## Bootstrap a new project
 - It is recommended that you install and use the divergence command line tool to bootstrap your project. If you wish to do this manually feel free to look in the section ahead.
     ```
-    composer global require divergence/cli`
+    composer global require divergence/cli
     mkdir project
     cd project
     composer init
@@ -53,7 +53,8 @@
 
 ## Configure Database access
 
- - Open `config/db.php` and give your new project some MySQL database credentials.
+ - Open `config/db.php` and give your new project database credentials.
+ - The framework ships with both MySQL and SQLite configuration examples.
  - You can also use the divergence command line tool for this.
  [![asciicast](https://asciinema.org/a/gZHWY2tXwjxDgYPvzjIuUjhEX.png)](https://asciinema.org/a/gZHWY2tXwjxDgYPvzjIuUjhEX)
 
@@ -72,12 +73,41 @@
         <?php
         use project\App as App;
     ```
-- Make a directory in your classes folder called `Controllers` and make a new file named `SiteRequestHandler.php` with these contents:
+- Override `handleRequest()` in your `App` class so your application boots into your own root controller instead of the framework placeholder `Divergence\Controllers\SiteRequestHandler`.
+- Make a directory in your classes folder called `Controllers` and make a new file named `Main.php` with these contents:
     ``` php
     <?php
     namespace project\Controllers;
 
-    class SiteRequestHandler extends \Divergence\Controllers\SiteRequestHandler {
+    use Psr\Http\Message\ResponseInterface;
+    use Psr\Http\Message\ServerRequestInterface;
+
+    class Main extends \Divergence\Controllers\RequestHandler {
+
+        public function handle(ServerRequestInterface $request): ResponseInterface
+        {
+            // route your application here
+        }
+
+    }
+    ```
+- Update your `App` class to dispatch through that root controller:
+    ``` php
+    <?php
+    namespace project;
+
+    use Divergence\Responders\Emitter;
+    use GuzzleHttp\Psr7\ServerRequest;
+    use project\Controllers\Main;
+
+    class App extends \Divergence\App {
+
+        public function handleRequest()
+        {
+            $main = new Main();
+            $response = $main->handle(ServerRequest::fromGlobals());
+            (new Emitter($response))->emit();
+        }
 
     }
     ```

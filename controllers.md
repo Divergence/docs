@@ -85,27 +85,27 @@ RequestHandler keeps track of the path, where you are in it, and provides utilit
 
 ### Response Mode
 ```php
-static::$responseMode
+$this->responseBuilder
 ```
-By default responseMode is set to 'dwoo' which is the template engine of choice for Divergence. You may choose to change $responseMode to 'json', 'jsonp', or simply 'return'.
+Current Divergence chooses response format through the response builder attached to the controller. Historically older versions documented a response-mode flag, but the current RequestHandler API exposes `respond()` and uses `$this->responseBuilder`.
 
 | ResponseMode | Description |
 | --- | --- |
-| dwoo | Responds with a dwoo template looking in `App::$ApplicationPath.'/views/'` for a template. |
+| twig/html | Responds with a Twig template looking in `App::$ApplicationPath.'/views/'` for a template. |
 | json | Print a JSON string and sends header `Content-type: application/json`. |
 | jsonp | Prints valid JS code that sets a variable `var data` to the data being output. |
-| return | Returns a raw PHP array of the data and TemplatePath. |
+| media | Streams file data and can support byte ranges. |
+| empty | Returns an empty response body with status and headers only. |
 
 ### API Reference
 | Method | Purpose |
 | --- | --- |
-| setPath | Internal method for getting the path from `$_SERVER['REQUEST_URI']`. |
 | peekPath | Returns the next path without moving the marker over. |
 | shiftPath | Returns the next path while moving the marker over. |
-| getPath | Returns the internal array derived from `$_SERVER['REQUEST_URI']`. |
 | unshiftPath($path) | Lets you add a path to the internal path stack. |
+| respond($responseID, $responseData = []) | Builds a response using the current response builder. |
 
-*All of these are protected methods so you can only run them from inside a controller.*
+These are controller methods intended to be used from inside your handlers.
 
 ## Your Own Controllers
 Typically your app should have a Controller namespace under your main Application namespace which means you should have a `src/Controllers` directory. This directory is recommended for storing all your controllers so that they are easy to find. You can create sub directories for various types of controllers.
@@ -113,7 +113,7 @@ Typically your app should have a Controller namespace under your main Applicatio
 You should organize your controllers by type or subdivision of your project. For example you might organize controllers related to an admin control panel in a folder called admin.
 
 ## Using a third party routing library
-Divergence in no way prevents you from using third-party routing libraries. Simply register the third party library in `project\Controllers\Main::handleRequest();`.
+Divergence in no way prevents you from using third-party routing libraries. Simply register the third party library in your application's root controller `handle(...)` flow.
 
 ### Built in controller classes for your convenience
 | Controller | Description |
@@ -122,7 +122,7 @@ Divergence in no way prevents you from using third-party routing libraries. Simp
 | `RecordsRequestHandler` | Provides a basic CRUD API for Models extending `Divergence\Models\ActiveRecord` |
 | `MediaRequestHandler` | Provides a basic CRUD API for Media extending `Divergence\Models\ActiveRecord`. Provides automatic thumbnailing, uploading, and other media features. |
 
-*Feel free to write your own
+*Feel free to write your own*
 
 ## RecordsRequestHandler
 `Divergence\Controllers\RecordsRequestHandler` gives you a pre-made controller for doing REST operations on a `Divergence\Models\ActiveRecord` model.
@@ -216,6 +216,25 @@ trait LoggedIn
 
 ```
 
+## Security
+Security in Divergence is mostly enforced at the controller layer. The framework gives you hooks, but your application is responsible for defining the actual policy.
+
+The main security hooks you should care about are:
+
+- `checkBrowseAccess()`
+- `checkReadAccess()`
+- `checkWriteAccess()`
+- `checkUploadAccess()`
+- `checkAPIAccess()`
+
+In practice:
+
+- `checkAPIAccess()` gates JSON and JSONP API access
+- `checkWriteAccess()` should protect create, edit, and delete paths
+- `checkUploadAccess()` should protect media uploads
+- shared authorization logic belongs in reusable traits
+
+The framework has historical session and auth pieces, but the most reliable pattern in real applications is to keep authentication in the application layer and let controllers ask the app about the current user or session.
 
 ## JSON API Reference
 This API Reference is for classes that extend `Divergence\RecordsRequestHandler`.
@@ -301,46 +320,6 @@ Specify filter rules with a JSON encoded array.
       "CreatorID": "1",
       "Tag": "linux",
       "Slug": "linux"
-    },
-    {
-      "ID": "3",
-      "Class": "technexus\\Models\\Tag",
-      "Created": 1523870424,
-      "CreatorID": "1",
-      "Tag": "osx",
-      "Slug": "osx"
-    },
-    {
-      "ID": "4",
-      "Class": "technexus\\Models\\Tag",
-      "Created": 1523870431,
-      "CreatorID": "1",
-      "Tag": "terminal",
-      "Slug": "terminal"
-    },
-    {
-      "ID": "5",
-      "Class": "technexus\\Models\\Tag",
-      "Created": 1523870455,
-      "CreatorID": "1",
-      "Tag": "bash",
-      "Slug": "bash"
-    },
-    {
-      "ID": "6",
-      "Class": "technexus\\Models\\Tag",
-      "Created": 1524502523,
-      "CreatorID": null,
-      "Tag": "daemon",
-      "Slug": "daemon"
-    },
-    {
-      "ID": "7",
-      "Class": "technexus\\Models\\Tag",
-      "Created": 1524514976,
-      "CreatorID": null,
-      "Tag": "openssh",
-      "Slug": "openssh"
     }
   ],
   "conditions": [],
@@ -366,13 +345,12 @@ It returns true by default. You must redefine it to setup permissions.
 
 If you plan to share permissions you should build yourself a permissions trait to re-use.
 
-
 ### One Record
-`URI: /blogposts/json/:id`
+`URI: /blogposts/json/:handle`
 
 `Method: GET, POST`
 
-
+The generic `RecordsRequestHandler` resolves records through `getRecordByHandle($action)`. In practice that means this path segment is whatever your model exposes through `getByHandle(...)`, not necessarily a numeric primary key.
 
 ### Example
 `$ curl -s http://localhost:8080/api/tags/json/2 | jq`
@@ -501,7 +479,7 @@ The return will provide you with the new primary key and unix timestamp of when 
 
 ### Example
 
-`curl $ curl -d '{"Tag":"ActiveRecord", "Slug":"activerecord"}' -H "Content-Type: application/json" -X POST -s http://localhost:8080/api/tags/json/create | jq`
+`curl -d '{"Tag":"ActiveRecord", "Slug":"activerecord"}' -H "Content-Type: application/json" -X POST -s http://localhost:8080/api/tags/json/create | jq`
 
 ```js
 {

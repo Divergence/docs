@@ -23,6 +23,15 @@
     - [Change Your Database Config](/cli.md#change-your-database-config)
     - [Tool Usage Reference](/cli.md#tool-usage-reference)
 
+- ### [Agentic MVP Guide](/agentic-mvp-guide.md)
+    - [Rules For The Agent](/agentic-mvp-guide.md#rules-for-the-agent)
+    - [Minimum Structure](/agentic-mvp-guide.md#minimum-structure)
+    - [Web Setup](/agentic-mvp-guide.md#web-setup)
+    - [SQLite MVP Setup](/agentic-mvp-guide.md#sqlite-mvp-setup)
+    - [MySQL MVP Setup](/agentic-mvp-guide.md#mysql-mvp-setup)
+    - [CLI Setup](/agentic-mvp-guide.md#cli-setup)
+    - [Minimum JSON-To-DB Example](/agentic-mvp-guide.md#minimum-json-to-db-example)
+
 - ### [Project Structure](/projectstructure.md)
     - [Load Order](/projectstructure.md#load-order)
     - [Folder Structure](/projectstructure.md#folder-structure)
@@ -37,7 +46,9 @@
     - [Create, Update, and Delete](/orm.md#create-update-and-delete)
     - [Versioning](/orm.md#versioning)
     - [Relationships](/orm.md#relationships)
+    - [Relationships Reference](/orm.md#relationships-reference)
     - [Supported Field Types](/orm.md#supported-field-types)
+    - [ORM Typing Explanation](/orm.md#orm-typing-explanation)
     - [Canary Model - An Example Utilizing Every Field Type](/orm.md#canary-model---an-example-utilizing-every-field-type)
     - [Validation](/orm.md#validation)
     - [Event Binding](/orm.md#event-binding)
@@ -46,30 +57,30 @@
 - ### [Controllers](/controllers.md#controllers)
     - [Intro to Tree Routing](/controllers.md#intro-to-tree-routing)
     - [RequestHandler](/controllers.md#requesthandler)
-    - [Your Own Controllers](/controllers.md#your-own-controller)
+    - [Your Own Controllers](/controllers.md#your-own-controllers)
     - [RecordsRequestHandler](/controllers.md#recordsrequesthandler)
         - [Building an API](/controllers.md#recordsrequesthandler)
         - [Permissions](/controllers.md#permissions)
+        - [Security](/controllers.md#security)
         - [JSON API Reference](/controllers.md#json-api-reference)
             - [Browse](/controllers.md#browse) (Read Many)
             - [One Record](/controllers.md#one-record) (Read One)
             - [Edit One Record](/controllers.md#edit-one-record)
             - [Create One Record](/controllers.md#create-one-record)
             - [Delete One Record](/controllers.md#delete-one-record)
-            - Create or Edit Multiple Records
-            - Delete Multiple Records
-    - Advanced Techniques
+            - [Create or Edit Multiple Records](/controllers.md#create-or-edit-multiple-records)
+            - [Delete Multiple Records](/controllers.md#delete-multiple-records)
 
 - ### [Views](/views.md)
     - [Responding with a Template](/views.md#responding-with-a-template)
 
-- ### Security
-    - ~~User model~~
-    - ~~Session model~~
-    - ~~Authentication~~
-    - [Binding Permissions](/controllers.md#permissions)
-
-    **Note:** *While these things are already built (and running in production on many many sites) they are yet to be unit tested so for now they remain on the road map for future versions.*
+- ### [Security](/security.md)
+    - [User Model](/security.md#user-model)
+    - [Session Model](/security.md#session-model)
+    - [Authentication](/security.md#authentication)
+    - [Logged-In State](/security.md#logged-in-state)
+    - [Binding Permissions](/security.md#binding-permissions)
+    - [Practical Minimum](/security.md#practical-minimum)
 
 - ### [Developing](/developing.md)
     - [Get the Source Code](/developing.md#get-the-source-code)
@@ -78,4 +89,3 @@
 
 - ### [Addendum](/addendum.md)
     - [About](/addendum.md#about)
-    

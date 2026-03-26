@@ -26,7 +26,17 @@ Unit tests use this config by default defined in config/db.php
 
 
 ## Unit Testing
-Run `vendor/bin/phpunit --coverage-clover build/logs/clover.xml`
+The framework currently exposes Composer scripts for the common test paths:
+
+```bash
+composer test
+composer test:mysql
+composer test:sqlite
+```
+
+You can also still run PHPUnit directly. For example:
+
+`vendor/bin/phpunit --coverage-clover build/logs/clover.xml`
 ```
 PHPUnit 9.6.9 by Sebastian Bergmann and contributors.
 

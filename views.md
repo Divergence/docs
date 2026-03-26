@@ -1,7 +1,7 @@
 ### [⤺ Back to Table of Contents](/README.md#divergence-framework-documentation)
 
 # Views
-Divergence uses the [Twig Template Engine](https://twig.symfony.com/) as it's primary template engine. It is recommended that you reference Dwoo documentation for details on how to use Dwoo templates. This documentation will discuss helpers for your controllers that will allow you to serve templates at a moment's notice.
+Divergence uses the [Twig Template Engine](https://twig.symfony.com/) as it's primary template engine. It is recommended that you reference Twig documentation for details on how to use Twig templates. This documentation will discuss helpers for your controllers that will allow you to serve templates at a moment's notice.
 
 #### Architecture
 A typical Divergence project will have a `views` folder containing all the Twig templates.
@@ -31,5 +31,3 @@ new Response(new TwigBuilder('helloworld.twig', [
 
 Will print the classic
 `Hello World`
-
-
