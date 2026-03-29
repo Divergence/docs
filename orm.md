@@ -1,133 +1,149 @@
 ### [⤺ Back to Table of Contents](/README.md#divergence-framework-documentation)
 
 # ORM
-Divergence uses a typical ActiveRecord pattern for it's models.
+Divergence uses a typical ActiveRecord pattern for its models.
 
 ## Model Architecture
 
 ### **If you do not want any default fields extend** `Divergence\Models\ActiveRecord`
 ### **If you would like to use default fields extend** `Divergence\Models\Model`
+
 | Type | Field | Description |
--------|-------|-------------|
-|`int` | `ID` | The primary key. |
+| --- | --- | --- |
+| `integer` | `ID` | The primary key. |
 | `enum` | `Class` | Fully qualified PHP namespaced class. |
 | `timestamp` | `Created` | Time when the object is created in the database. |
-| `int` | `Creator` | Reserved for use with authentication system. |
+| `integer` | `CreatorID` | Reserved for use with your authentication system. |
 
-#### The trait `Divergence\Models\Getters` is automatically also pulled in by `Divergence\Models\Model` so you don't have to do it yourself.
+`Divergence\Models\Model` automatically also pulls in `Divergence\Models\Getters`, so you do not have to do it yourself.
 
 ### Important Functionality
 | Trait | Description |
-|-------| ---- |
+| --- | --- |
 | `Divergence\Models\Getters` | Suite of methods to pull records from the database. |
 | `Divergence\Models\Relations` | Lets you build relationships between models. |
-| `Divergence\Models\Versioning` | Automatically tracks history of all models. |
----
+| `Divergence\Models\Versioning` | Automatically tracks history of models. |
+
 Classes that use ActiveRecord may optionally use traits to enable relationship features and versioning features respectively.
 
 #### Object Oriented Architecture
-When using array mapping ActiveRecord will merge `public static $fields` and  `public static $relationships` at run-time giving priority to the child. You can override fields in the child class that have already been set by a parent class.
+When using array mapping, ActiveRecord merges `public static $fields` and `public static $relationships` at runtime, giving priority to the child.
 
-A child class may choose to unset a relationship or field simply by setting the config to null. A child class may also use a different type for the same database field name.
+A child class may choose to unset a relationship or field simply by setting the config to `null`. A child class may also use a different type for the same database field name.
 
 Overrides must use the key for the field configuration.
 
 If you are using the older array-mapping style, you will usually define the common class configurables shown in this section. With attribute-based mapping, the framework can infer more of the model structure directly from your class.
 
 #### Subclassing
- ```php
-    public static $rootClass = __CLASS__;
-    public static $defaultClass = __CLASS__;
-    public static $subClasses = [__CLASS__];
+```php
+public static $rootClass = __CLASS__;
+public static $defaultClass = __CLASS__;
+public static $subClasses = [__CLASS__];
 ```
+
 In the event that you have subclasses you can define them here. By default just use the above configuration. You'll want to override `$rootClass` and `$defaultClass` if necessary for yourself.
 
 #### Table Name & Nouns
 ```php
-    public static $tableName = 'table';
-    public static $singularNoun = 'table';
-    public static $pluralNoun = 'tables';
+public static $tableName = 'table';
+public static $singularNoun = 'table';
+public static $pluralNoun = 'tables';
 ```
+
 Table name is for the database table.
-Singular noun and plural noun are mostly used by `RecordsRequestHandler` to load the right template so think of those as template filenames.
+
+Singular noun and plural noun are mostly used by `RecordsRequestHandler` to load the right template in HTML mode, so think of those as resource and template names.
 
 #### Field Mapping
 
-As of 2.0 Divergence now supports field mapping using PHP Attributes.
+Divergence supports field mapping using PHP attributes as well as the older static-array style.
 
 For example:
 
 ```php
-    #[Column(type: "integer", primary:true, autoincrement:true, unsigned:true)]
-    protected $ID;
+#[Column(type: "integer", primary:true, autoincrement:true, unsigned:true)]
+private $ID;
 ```
-Because the field is protected we still trigger `__get` from outside of the object. Unfortunately this means we must manually run getValue('ID') when used inside the object.
 
-For field mapping by array ActiveRecord also merges each static::$field for every class from child to parent. Any defined $fields are usable as `$Model->$fieldName`.
+For field mapping by array, ActiveRecord also merges each `static::$fields` for every class from child to parent. Any defined `$fields` are usable as `$Model->$fieldName`.
+
 ```php
-    public static $fields = [
-        'Tag',
-        'Slug',
-    ];
+public static $fields = [
+    'Tag',
+    'Slug',
+];
 ```
 
 #### About Default Field Configs
-By default if you just have a string that will be treated as the name of the field for the model. By default it's treated as a string by PHP and a varchar(255) by the database if allowed to be automatically generated by the framework. There are no default validators so the database will truncate any values above 255 characters.
+By default, if you just have a string that will be treated as the name of the field for the model. In practice that means a PHP string and a short text column at the schema layer if the framework has to auto-create the table.
 
 ```php
-protected $title; // this will be a varchar(255) treated as a string in PHP
+protected $title;
 ```
 
 #### Automatically Create Tables
-If you try to use a Model and the database responds with the error for "table not found" then it will will automatically build you the SQL to create the table, run it, and rerun the original query without throwing an error to the user.
+If you try to use a model and the database responds with a table-not-found error, the framework can attempt to build the SQL, create the table, and rerun the original operation.
 
-You can disable this behavior by setting `public static $autoCreateTable` to false in your model.
+You can disable this behavior by setting:
 
+```php
+public static $autoCreateTables = false;
+```
+
+Note the current property name is `autoCreateTables`.
 
 ## Making a Basic Model
-Here's an example of a minimum Model
+Here's an example of a minimum model:
+
 ```php
 <?php
 namespace yourApp\Models;
 
+use Divergence\Models\Mapping\Column;
+
 class Tag extends \Divergence\Models\Model
 {
-    
     // support subclassing
     public static $rootClass = __CLASS__;
     public static $defaultClass = __CLASS__;
     public static $subClasses = [__CLASS__];
 
-
     // ActiveRecord configuration
     public static $tableName = 'tags';
     public static $singularNoun = 'tag';
     public static $pluralNoun = 'tags';
-    
-    public static $fields = [
-        'Tag',
-    ];
+
+    #[Column(type: 'string', required: true, notnull: true)]
+    private $Tag;
+
+    #[Column(type: 'string', blankisnull: true, notnull: false)]
+    private $Slug;
+}
 ```
-We get these fields from `\Divergence\Models\Model` as defaults.
+
+We get these fields from `\Divergence\Models\Model` as defaults:
+
 ```php
-    #[Column(type: "integer", primary:true, autoincrement:true, unsigned:true)]
-    protected $ID;
+#[Column(type: "integer", primary:true, autoincrement:true, unsigned:true)]
+private $ID;
 
-    #[Column(type: "enum", notnull:true, values:[])]
-    protected $Class;
+#[Column(type: "enum", notnull:true, values:[])]
+private $Class;
 
-    #[Column(type: "timestamp", default:'CURRENT_TIMESTAMP')]
-    protected $Created;
+#[Column(type: "timestamp", default:'CURRENT_TIMESTAMP')]
+private $Created;
 
-    #[Column(type: "integer", notnull:false)]
-    protected $CreatorID;
+#[Column(type: "integer", notnull:false)]
+private $CreatorID;
 ```
 
 ## Create, Update, and Delete
-Divergence ActiveRecord is super simple and easy making use of native PHP architecture whenever possible.
+Divergence ActiveRecord is simple and makes use of normal PHP object patterns whenever possible.
+
 ### Creating
----
-Example without defaults
+Example without defaults:
+
 ```php
 $Tag = new Tag();
 echo $Tag->Name; // prints null
@@ -135,42 +151,45 @@ $Tag->Name = 'Divergence';
 echo $Tag->Name; // prints Divergence
 ```
 
-Example with record instantiation via construct
+Example with record instantiation via constructor:
+
 ```php
 $Tag = new Tag([
-    'Name'  => 'Divergence',
+    'Name' => 'Divergence',
 ]);
 echo $Tag->Name; // prints Divergence
 ```
 
-Example with record instantiation via create method
+Example with record instantiation via `create()`:
+
 ```php
 $Tag = Tag::create([
-    'Name'  => 'Divergence',
+    'Name' => 'Divergence',
 ]);
 echo $Tag->Name; // prints Divergence
 ```
 
-Example with record instantiation via create method and save to database
+Example with record instantiation via `create()` and save directly to the database:
+
 ```php
 $Tag = Tag::create([
-    'Name'  => 'Divergence',
-],true); // save directly to database right away
+    'Name' => 'Divergence',
+], true);
 echo $Tag->Name; // prints Divergence
 echo $Tag->ID; // prints ID assigned by the database auto increment
 ```
 
-Another save example
+Another save example:
+
 ```php
 $Tag = new Tag();
 $Tag->Name = 'Divergence';
 echo $Tag->ID; // prints null
 $Tag->save();
 echo $Tag->ID; // prints ID assigned by the database auto increment
-``` 
+```
 
 ### Update
----
 ```php
 $Tag = Tag::getByID(1);
 echo $Tag->ID; // prints 1
@@ -178,126 +197,153 @@ $Tag->Name = 'Divergence';
 $Tag->save();
 ```
 
-Get By Field
+Get by field:
+
 ```php
-$Tag = Tag::getByField('ID',1);
+$Tag = Tag::getByField('ID', 1);
 echo $Tag->ID; // prints 1
 $Tag->Name = 'Divergence';
 $Tag->save();
 ```
 
 ### Delete
----
 ```php
 $Tag = Tag::getByID(1);
 echo $Tag->ID; // prints 1
-$Tag->destroy(); // record still in variable
+$Tag->destroy(); // record still exists in the variable
 ```
 
-or statically
+or statically:
+
 ```php
-Tag::delete(1); // returns true if DB::affectedRows > 0
+Tag::delete(1); // returns true if affected rows > 0
 ```
+
+## Getter Layer and Factory Runtime
+
+The public model API still looks like classic Divergence:
+
+- `getByID`
+- `getByField`
+- `getByHandle`
+- `getByWhere`
+- `getByQuery`
+- `getAll`
+- `getAllByField`
+- `getAllByWhere`
+- `getAllByQuery`
+- `getUniqueHandle`
+
+But the current implementation is more modular than older docs implied.
+
+Today:
+
+- `Divergence\Models\Getters` is a thin forwarding trait
+- static getter calls route into `Divergence\Models\Factory`
+- `Factory` registers dedicated getter classes such as `GetByID`, `GetByField`, `GetAllByWhere`, and `GetUniqueHandle`
+- `Factory` also coordinates model metadata, instantiation, connection resolution, and storage caching
+
+That means the external API is stable, but the query/runtime plumbing behind it has been decomposed into smaller pieces.
 
 ## Versioning
-Your **model** must be defined with a `use Versioning` in it's definition.
+Your **model** must be defined with `use Versioning` in its definition.
+
 ```php
 <?php
 namespace Divergence\Tests\MockSite\Models;
 
-use \Divergence\Models\Model;
-use \Divergence\Models\Versioning;
+use Divergence\Models\Model;
+use Divergence\Models\Versioning;
 
 class Tag extends Model
 {
     use Versioning;
+}
 ```
 
 #### Configurables
 You **must** provide these settings to use versioning.
-```php
-    // versioning
-    static public $historyTable = 'test_history';
-    static public $createRevisionOnDestroy = true;
-    static public $createRevisionOnSave = true;
-```
-If you did not create your tables yet a versioned model will have it's history table automatically created.
 
-If you add versioning support after your main table is already in use you must use the SQL class to build yourself a table creation query.
+```php
+public static $historyTable = 'test_history';
+public static $createRevisionOnDestroy = true;
+public static $createRevisionOnSave = true;
+```
+
+If you did not create your tables yet, a versioned model can have its history table automatically created by the same missing-table path the main model uses.
 
 #### Trait `\Divergence\Models\Versioning` provides these fields.
 
 ##### Definition
 ```php
-    #[Column(type: "integer", unsigned:true, notnull:false)]
-    protected $RevisionID;
+#[Column(type: "integer", unsigned:true, notnull:false)]
+private $RevisionID;
 ```
 
 #### Trait `\Divergence\Models\Versioning` provides these methods.
 | Method | Purpose |
-| --- | ---|
-| getRevisionsByID | Returns an array of versions of a model by ID and $options config. |
-| getRevisions | Returns an array of versions of a model by $options config. |
----
+| --- | --- |
+| `getRevisionsByID` | Returns an array of versions of a model by ID and `$options`. |
+| `getRevisions` | Returns an array of versions of a model by `$options`. |
 
 #### Trait `\Divergence\Models\Versioning` provides these relationships.
 | Relationship | Type | Purpose |
 | --- | --- | --- |
-| History | History | Pulls old versions of this Model |
+| `History` | `history` | Pulls old versions of this model |
 
 ##### Definition
 ```php
-    'History' => [
-        'type' => 'history',
-        'order' => ['RevisionID' => 'DESC'],
-    ],
+'History' => [
+    'type' => 'history',
+    'order' => ['RevisionID' => 'DESC'],
+],
 ```
 
-##### Example - *Must use the Relational trait*
+##### Example
 ```php
-$Model->getByID(1);
+$Model = Tag::getByID(1);
 $Model->History; // array of revisions where ID == 1 ordered by RevisionID
-
-($Model->History === $Model->History[0]->History) // returns true
 ```
 
 ## Relationships
-Your model **must** be defined with a `use Relationships` in it's definition.
+Your model **must** be defined with `use Relations` in its definition.
+
 ```php
 <?php
 namespace Divergence\Tests\MockSite\Models;
 
-use \Divergence\Models\Model;
-use \Divergence\Models\Relations;
+use Divergence\Models\Model;
+use Divergence\Models\Relations;
 
 class Tag extends Model
 {
     use Relations;
+}
 ```
 
 #### Configurables
-For array mapping **must** provide relationship configurations in the static variable `$relationships`.
+For array mapping you **must** provide relationship configurations in the static variable `$relationships`.
+
 ```php
-    // relationships
-    static public $relationships = [
+public static $relationships = [
     /*
-        'RelationshipName' => [ 
-            .. config ...
+        'RelationshipName' => [
+            ... config ...
         ]
-        ... more configs
     */
-    ]
+];
 ```
 
-Otherwise you can define it with attributes like so.
+Otherwise you can define it with attributes like so:
+
 ```php
-    #[Relation(
-        type:'one-one',
-        class:Tag::class,
-        local: 'ThreadID',
-        foreign: 'ID',
-    )]
-    protected $Tag;
+#[Relation(
+    type:'one-one',
+    class:Tag::class,
+    local: 'ThreadID',
+    foreign: 'ID',
+)]
+protected $Tag;
 ```
 
 #### Keep in Mind
@@ -305,16 +351,9 @@ Otherwise you can define it with attributes like so.
 - The second will override the first.
 - Children classes can override parent classes by setting the class configuration to `null`.
 - Relationship configs will be stacked with priority given to the child class.
-- Relationships are callable by their key name from `$this->$relationshipKey` but model field names take priority!
+- Relationships are callable by their key name from `$this->$relationshipKey`, but model field names take priority.
 
 ## Relationships Reference
-This section walks through every supported relationship type in practical terms. The important things to understand are:
-
-- what shape the data has in the database
-- what the relationship returns in PHP
-- which options are required
-- which options the framework infers for you
-
 Internally, the relationship resolver supports:
 
 - `one-one`
@@ -327,13 +366,6 @@ Internally, the relationship resolver supports:
 ### `one-one`
 Use `one-one` when the current record points to exactly one related record.
 
-Common example:
-
-- a `Post` has one `Author`
-- a `Comment` has one `Post`
-- a `Media` record belongs to one specific parent record
-
-Example:
 ```php
 #[Relation(
     type:'one-one',
@@ -344,41 +376,15 @@ Example:
 protected $Author;
 ```
 
-What it means:
+Defaults:
 
-- `local` is the field on the current model
-- `foreign` is the field on the related model
-- the relationship returns one object or `null`
-
-If you omit `type`, Divergence treats the relationship as `one-one`.
-
-If you omit `local`, Divergence defaults it to `<RelationshipName>ID`.
-
-For example:
-
-```php
-#[Relation(class: Thread::class)]
-protected $Thread;
-```
-
-is treated like:
-
-- `type: 'one-one'`
-- `local: 'ThreadID'`
-- `foreign: 'ID'`
-
-This is the cleanest relationship for “this record belongs to one other record.”
+- omitting `type` behaves like `one-one`
+- omitting `local` defaults it to `<RelationshipName>ID`
+- omitting `foreign` defaults it to `ID`
 
 ### `one-many`
 Use `one-many` when the current record owns a collection of related records.
 
-Common example:
-
-- a `Category` has many `Thread` records
-- a `Thread` has many `Post` records
-- a `User` has many `Session` records
-
-Example:
 ```php
 #[Relation(
     type:'one-many',
@@ -389,56 +395,11 @@ Example:
 protected $Threads;
 ```
 
-What it means:
-
-- `local` is usually the current model primary key
-- `foreign` is the field on the child model that points back to this record
-- the relationship returns an array of model objects
-
-Defaults:
-
-- `local` defaults to `ID`
-- `foreign` defaults to `<CurrentRootClassName>ID`
-- `indexField` defaults to `false`
-- `conditions` defaults to `[]`
-- `order` defaults to `false`
-
-That means if the current model class is `Category`, the default child foreign key would be `CategoryID`.
-
-You can also filter and sort the related collection:
-
-```php
-#[Relation(
-    type:'one-many',
-    class:Thread::class,
-    local: 'ID',
-    foreign: 'CategoryID',
-    conditions: [
-        'Created > DATE_SUB(NOW(), INTERVAL 1 HOUR)',
-    ],
-    order: ['Title' => 'ASC']
-)]
-protected $RecentThreads;
-```
-
-Use `one-many` whenever the database design is a normal parent-child foreign key.
+You can also add `conditions` and `order`.
 
 ### `many-many`
-Use `many-many` when two models are connected through a join table.
+Use `many-many` when two models are connected through a join model or join table.
 
-Common example:
-
-- posts and tags
-- users and groups
-- records and labels
-
-You need three model classes for this shape:
-
-- the current model
-- the target model
-- the link model
-
-Example:
 ```php
 #[Relation(
     type:'many-many',
@@ -452,48 +413,9 @@ Example:
 protected $Tags;
 ```
 
-What it means:
-
-- `class` is the final related model you want back
-- `linkClass` is the join model/table
-- `linkLocal` is the join field pointing to the current model
-- `linkForeign` is the join field pointing to the target model
-- `local` is the current model key, usually `ID`
-- `foreign` is the target model key, usually `ID`
-
-Required options:
-
-- `class`
-- `linkClass`
-
-Defaults:
-
-- `linkLocal` defaults to `<CurrentRootClassName>ID`
-- `linkForeign` defaults to `<TargetRootClassName>ID`
-- `local` defaults to `ID`
-- `foreign` defaults to `ID`
-- `indexField` defaults to `false`
-- `conditions` defaults to `[]`
-- `order` defaults to `false`
-
-This relationship returns an array of target model objects, not the join objects.
-
-Use `many-many` when the relationship is truly symmetrical or when either side can have many of the other side.
-
 ### `context-parent`
-Use `context-parent` when a record stores a polymorphic parent reference through both:
+Use `context-parent` when a record stores a polymorphic parent reference through `ContextClass` and `ContextID`.
 
-- `ContextClass`
-- `ContextID`
-
-This is useful when one child model can belong to more than one kind of parent model.
-
-Common example:
-
-- a media record that can belong to different model classes
-- a note or comment that can be attached to different resource types
-
-Example:
 ```php
 #[Relation(
     type:'context-parent',
@@ -503,31 +425,9 @@ Example:
 protected $Context;
 ```
 
-What it means:
-
-- `local` is the field holding the parent ID
-- `classField` is the field holding the fully qualified parent class name
-- the relationship returns one object or `null`
-
-Defaults:
-
-- `local` defaults to `ContextID`
-- `foreign` defaults to `ID`
-- `classField` defaults to `ContextClass`
-- `allowedClasses` defaults to `static::$contextClasses` when present
-
-Use `context-parent` when the parent can vary by class at runtime.
-
 ### `context-children`
-Use `context-children` for the inverse of `context-parent`: fetch all child records whose `ContextClass` and `ContextID` point at the current record.
+Use `context-children` for the inverse of `context-parent`.
 
-Common example:
-
-- all media attached to a post
-- all comments attached to a thread
-- all secondary records attached to a parent object through contextual ownership
-
-Example:
 ```php
 #[Relation(
     type:'context-children',
@@ -538,29 +438,9 @@ Example:
 protected $Media;
 ```
 
-What it means:
-
-- `class` is the child model class
-- `local` is the field on the current model used as the child `ContextID`
-- `contextClass` is the class name that the child records should match in `ContextClass`
-- the relationship returns an array of child objects
-
-Defaults:
-
-- `local` defaults to `ID`
-- `contextClass` defaults to the current class
-- `indexField` defaults to `false`
-- `conditions` defaults to `[]`
-- `order` defaults to `false`
-
-Use `context-children` when children are polymorphically attached to a parent object.
-
 ### `history`
 Use `history` with versioned models to expose prior revisions.
 
-This only makes sense when the model uses the `Versioning` trait and has a configured history table.
-
-Example:
 ```php
 'History' => [
     'type' => 'history',
@@ -568,257 +448,138 @@ Example:
 ],
 ```
 
-What it means:
-
-- the relationship returns previous revisions of the current record
-- the underlying lookup uses the model's revision helpers
-- the result is an array of historical versions
-
-If no `class` is supplied, the framework defaults it to the current model class for versioned models.
-
-Use `history` when you want revision browsing directly from the model API.
-
 ## Examples
----
-Both of these are actually doing the same thing. Some fields are assumed.
 #### One-One
 ```php
-    #[Relation(
-        type:'one-one',
-        class:Tag::class,
-        local: 'ThreadID',
-        foreign: 'ID',
-    )]
-    protected $Tag;
+#[Relation(
+    type:'one-one',
+    class:Tag::class,
+    local: 'ThreadID',
+    foreign: 'ID',
+)]
+protected $Tag;
 
-    #[Relation(
-        type:'one-one',
-        class:Post::class,
-        local: 'PostID',
-        foreign: 'ID',
-    )]
-    protected $Post;
+#[Relation(
+    type:'one-one',
+    class:Post::class,
+    local: 'PostID',
+    foreign: 'ID',
+)]
+protected $Post;
 ```
 
 #### One-Many
 Feel free to create multiple relationship configurations with different conditions and orders.
-```php
-    #[Relation(
-        type:'one-many',
-        class:Thread::class,
-        local: 'ID',
-        foreign: 'CategoryID'
-    )]
-    protected $Threads;
 
-    #[Relation(
-        type:'one-many',
-        class:Thread::class,
-        local: 'ID',
-        foreign: 'CategoryID',
-        conditions: [
-            'Created > DATE_SUB(NOW(), INTERVAL 1 HOUR)',
-        ],
-        order: ['Title'=>'ASC']
-    )]
+```php
+#[Relation(
+    type:'one-many',
+    class:Thread::class,
+    local: 'ID',
+    foreign: 'CategoryID'
+)]
+protected $Threads;
+
+#[Relation(
+    type:'one-many',
+    class:Thread::class,
+    local: 'ID',
+    foreign: 'CategoryID',
+    conditions: [
+        'Created > DATE_SUB(NOW(), INTERVAL 1 HOUR)',
+    ],
+    order: ['Title' => 'ASC']
+)]
+protected $RecentThreads;
 ```
 
 ## Supported Field Types
 
-| Field Type | Database Type | Default Options |
-| --- | --- | --- |
-| int | int | notnull = false, unsigned = true, required = false, $default = null|
-| string | varchar (255) | notnull = false, required = false, $default = null|
-| float | float | notnull = false, unsigned = true, required = false, $default = null|
-| enum | enum | values = [], notnull = false, required = false, $default = null|
-| clob | text | notnull = false, required = false, $default = null |
-| boolean | int (1) | notnull = false, unsigned = true, required = false, $default = null |
-| password | varchar (255) | notnull = false, unsigned = true, required = false, $default = null |
-| timestamp | timestamp | notnull = false, unsigned = true, required = false, $default = null |
-| date | date | notnull = false, unsigned = true, required = false, $default = null |
-| serialized | text | notnull = false, unsigned = true, required = false, $default = null |
-| set | set | notnull = false, unsigned = true, required = false, $default = null |
-| list | list | notnull = false, unsigned = true, required = false, $default = null |
+| Field Type | Typical Use |
+| --- | --- |
+| `int` | Integer values |
+| `integer` | Integer values |
+| `uint` | Unsigned integer values |
+| `string` | Short text |
+| `clob` | Long text |
+| `float` | Approximate decimal values |
+| `decimal` | Exact fixed-point values |
+| `enum` | Controlled one-of-many values |
+| `boolean` | True/false flags |
+| `password` | Hashed secret material |
+| `timestamp` | Date + time values |
+| `date` | Date-only values |
+| `serialized` | Serialized structured data |
+| `set` | Multi-value controlled sets |
+| `list` | Ordered delimited lists |
+| `binary` | Raw binary blobs such as session IP storage |
 
 ## ORM Typing Explanation
 This section explains what each field type means in practice, how the framework stores it, and what you should expect when reading and writing values.
 
 ### `int`
-`int` is a whole-number type. It is commonly used for foreign keys, counters, and numeric fields that should not contain fractions.
-
-Use `int` when:
-
-- the value should be numeric
-- decimal precision is not needed
-- negative values may or may not be valid depending on config
-
-Typical examples are context IDs, counters, and general integer metadata.
+Whole-number numeric field.
 
 ### `integer`
-`integer` is functionally the same family as `int` and is commonly used for explicit integer field declarations.
-
-In practice the docs and examples use both `int` and `integer`. The important thing is not the spelling difference but the meaning: whole-number storage with no decimal component.
-
-Use `integer` when you want a clearly named integer field in your model definition.
+Also a whole-number field. In practice `int` and `integer` are the same family here.
 
 ### `uint`
-`uint` is an unsigned integer. It should never contain negative values.
-
-Use `uint` when:
-
-- the field represents a count or measurement that cannot go below zero
-- you want the schema itself to reflect that constraint
-
-The `HighestRecordedAltitude` example in the canary model is a good fit for this kind of field.
+Unsigned integer. Should never be negative.
 
 ### `string`
-`string` is the default short text type and usually maps to a `varchar(255)`.
-
-This is the right type for:
-
-- names
-- titles
-- slugs
-- handles
-- short labels
-
-If the value should stay reasonably short and human-readable, `string` is usually correct.
+Short text, usually the right fit for names, titles, slugs, and handles.
 
 ### `clob`
-`clob` is long-form text. Use it for bodies of content, descriptions, or other large text values.
-
-This is appropriate when:
-
-- the value can exceed normal string length
-- truncation would be dangerous
-- you are storing free-form text rather than labels or identifiers
-
-Large article bodies, comments, descriptions, and raw text payloads should generally be `clob`.
+Long-form text for bodies, descriptions, and content.
 
 ### `float`
-`float` stores approximate numeric values with decimals.
-
-Use it for measurements where small floating-point rounding differences are acceptable, such as height or derived values.
-
-Do not use `float` for exact money or accounting values if precision matters. Use `decimal` instead.
+Approximate decimal values. Fine for measurements where small rounding drift is acceptable.
 
 ### `decimal`
-`decimal` stores exact fixed-point numeric values and takes `precision` and `scale`.
-
-Use it when:
-
-- exact decimal precision matters
-- the number should not drift through floating-point rounding
-- you know the total digits and digits-after-decimal you want to enforce
-
-This is the right choice for prices, money, and exact measured values.
+Exact fixed-point decimal values. Use for money or values where precision matters.
 
 ### `enum`
-`enum` restricts a field to one of a predefined set of values.
-
-Use it when the field should only ever contain one value from a controlled list. The `Class` field and `ContextClass` style patterns are common examples.
-
-An `enum` gives you tighter constraints than a free-form `string`, which is useful when invalid values should be impossible at the schema layer.
+Restricts a field to one of a predefined set of values.
 
 ### `boolean`
-`boolean` stores a true or false value.
-
-Use it for flags and toggles:
-
-- `isAlive`
-- published vs unpublished
-- enabled vs disabled
-
-At the database layer this is usually represented numerically, but the model interface treats it semantically as true or false.
+True/false flag field.
 
 ### `password`
-`password` is intended for hashed secrets rather than raw passwords.
-
-This field type signals intent more than structure: the value should be a derived secure value, not plaintext input.
-
-Use it for password hashes and similar sensitive credential material.
+Intended for hashed secrets rather than plaintext input.
 
 ### `timestamp`
-`timestamp` represents a time value and is appropriate when time-of-day precision matters.
-
-Use it for:
-
-- created times
-- edited times
-- checked-at times
-- event times
-
-If you care about the exact time, not just the date, `timestamp` is the correct choice.
+Time values with time-of-day precision.
 
 ### `date`
-`date` represents a calendar date without time-of-day precision.
-
-Use it when the day matters but the hour and minute do not:
-
-- birthdays
-- due dates
-- effective dates
-- publication dates without exact timestamp semantics
+Calendar dates without time-of-day precision.
 
 ### `serialized`
-`serialized` stores structured PHP data by serializing it into text.
-
-Use it when:
-
-- the value is structured
-- the structure varies too much for clean column mapping
-- SQL-level querying inside the value is not important
-
-It trades relational clarity for flexibility, so it is best used intentionally rather than by default.
+Stores structured PHP data serialized into text.
 
 ### `set`
-`set` stores a collection of values chosen from a predefined allowed list.
-
-Use it when a field can contain multiple values but every value must come from a controlled vocabulary.
-
-This is useful for things like color sets, feature flags, or multi-select labels where arbitrary input would be a mistake.
+Stores multiple values from a controlled list.
 
 ### `list`
-`list` stores an ordered list of values separated by a delimiter.
+Stores an ordered delimited list of values.
 
-Use it when:
-
-- the field contains multiple values
-- order matters or is useful
-- you do not need a normalized join table
-
-This is lighter than a full relationship, but also less queryable. It works best for small ordered collections such as the `EyeColors` example.
+### `binary`
+Stores raw binary data. The session model uses this for `LastIP`.
 
 ## Canary Model - An Example Utilizing Every Field Type
+The mock test app ships a `Canary` model that exists specifically as an example of field mapping coverage.
+
 ```php
 <?php
 namespace App\Models;
 
-use Divergence\Models\Relations;
 use Divergence\Models\Versioning;
 use Divergence\Models\Mapping\Column;
 
-/*
- *  The purpose of this Model is to provide an example of every field type
- *  hopefully in every possible configuration.
- *
- */
 class Canary extends \Divergence\Models\Model
 {
     use Versioning;
-    
-    // support subclassing
-    public static $rootClass = __CLASS__;
-    public static $defaultClass = __CLASS__;
-    public static $subClasses = [__CLASS__];
 
-
-    // ActiveRecord configuration
     public static $tableName = 'canaries';
-    public static $singularNoun = 'canary';
-    public static $pluralNoun = 'canaries';
-    
-    // versioning
     public static $historyTable = 'canaries_history';
     public static $createRevisionOnDestroy = true;
     public static $createRevisionOnSave = true;
@@ -850,27 +611,7 @@ class Canary extends \Divergence\Models\Model
     #[Column(type: 'serialized')]
     protected $SerializedData;
 
-    #[Column(type: 'set', values: [
-        "red",
-        "pink",
-        "purple",
-        "deep-purple",
-        "indigo",
-        "blue",
-        "light-blue",
-        "cyan",
-        "teal",
-        "green",
-        "light-green",
-        "lime",
-        "yellow",
-        "amber",
-        "orange",
-        "deep-orange",
-        "brown",
-        "grey",
-        "blue-grey",
-    ])]
+    #[Column(type: 'set', values: ["red", "blue", "green"])]
     protected $Colors;
 
     #[Column(type: 'list', delimiter: '|')]
@@ -893,38 +634,25 @@ class Canary extends \Divergence\Models\Model
 
     #[Column(type: 'decimal', notnull: false, precision: 5, scale: 2)]
     protected $Weight;
-
-    public static $indexes = [
-        'Handle' => [
-            'fields' => [
-                'Handle',
-            ],
-            'unique' => true,
-        ],
-        'DateOfBirth' => [
-            'fields' => [
-                'DateOfBirth',
-            ],
-        ],
-    ];
 }
 ```
 
 ## Validation
-Validation is available to you through a static config in your model. The config is an array of validator configs. Whenever possible Divergence validators will use built in PHP validator filters.
+Validation is available to you through a static config in your model. The config is an array of validator configs. Whenever possible Divergence validators use built in PHP validation helpers.
 
-Validators are evaluated in the order in which they appear and validation stops if there's an error. ActiveRecord will throw a simple `Exception`. Be aware that setting validators will open you up to Exceptions that you should catch.
+Validators are evaluated in the order in which they appear. `save()` calls `validate()` before persistence.
 
-#### A snippet from ActiveRecord's save method.
+#### A snippet from ActiveRecord's save path.
 ```php
-// validate
 if (!$this->validate($deep)) {
     throw new Exception('Cannot save invalid record');
 }
 ```
+
 ##### Deep is true by default. It will validate loaded relationships as well.
 
-Set validators in your model.
+Set validators in your model:
+
 ```php
 public static $validators = [
     [
@@ -936,8 +664,6 @@ public static $validators = [
 ```
 
 ### Examples
----
-
 ```php
 [
     'field' => 'Name',
@@ -963,7 +689,7 @@ public static $validators = [
     'validator' => 'number',
     'max' => PHP_INT_MAX,
     'min' => 1,
-    'errorMessage' => 'ID must be between 0 and PHP_INT_MAX ('.PHP_INT_MAX.')',
+    'errorMessage' => 'ID must be between 1 and PHP_INT_MAX ('.PHP_INT_MAX.')',
 ]
 ```
 
@@ -974,11 +700,12 @@ public static $validators = [
     'validator' => 'number',
     'max' => 0.759,
     'min' => 0.128,
-    'errorMessage' => 'ID must be between 0.127 and 0.760',
+    'errorMessage' => 'Float must be between 0.128 and 0.759',
 ]
 ```
 
-Email Validation
+Email validation:
+
 ```php
 [
     'field' => 'Email',
@@ -987,14 +714,15 @@ Email Validation
 ]
 ```
 
-Custom Validation
+Custom validation:
+
 ```php
 [
     'field' => 'Email',
     'required' => true,
     'validator' => [
-        Validate::class,  // this is the actual Validate class that comes with Divergence
-        'email', // so look at this method for an example for how to make your own validator
+        Validate::class,
+        'email',
     ],
 ]
 ```
@@ -1006,72 +734,82 @@ If you set `ActiveRecord::$beforeSave` you can hook into every save for every mo
 
 Both `$beforeSave` and `$afterSave` get passed an instance of the object being saved as the only parameter.
 
-Events are not overriden by child classes. An event will fire for every parent of a child class.
+Events are not overridden by child classes. An event will fire for every parent of a child class.
 
-
-#### The two relevant snippets from ActiveRecord's save.
+#### The two relevant snippets from ActiveRecord's event-definition path.
 ```php
-foreach (static::$_classBeforeSave as $beforeSave) {
-    if (is_callable($beforeSave)) {
-        $beforeSave($this);
+if (is_callable($class::$beforeSave)) {
+    if (!empty($class::$beforeSave)) {
+        if (!in_array($class::$beforeSave, static::$_classBeforeSave)) {
+            static::$_classBeforeSave[] = $class::$beforeSave;
+        }
     }
 }
 ```
 
 ```php
-foreach (static::$_classAfterSave as $afterSave) {
-    if (is_callable($afterSave)) {
-        $afterSave($this);
+if (is_callable($class::$afterSave)) {
+    if (!empty($class::$afterSave)) {
+        if (!in_array($class::$afterSave, static::$_classAfterSave)) {
+            static::$_classAfterSave[] = $class::$afterSave;
+        }
     }
 }
 ```
 
-Please look at `ActiveRecord::_defineEvents()` to see how ActiveRecord builds the event chain.
+Also note that the current save flow routes through handler classes:
 
-Please also note that if validation failed `$afterSave` will never fire.
+- `beforeSaveHandler`
+- `afterSaveHandler`
+- `saveHandler`
+- `destroyHandler`
+- `deleteHandler`
+
+So the framework's event and persistence lifecycle is more modular than older docs implied, even though the conceptual hooks are the same.
 
 ## Advanced Techniques
-Here I'll show a few examples of how to use ActiveRecord but still do some custom things with your model.
+Here are a few examples of how to use ActiveRecord but still do custom things with your model.
 
 ### Dynamic Fields
 This is a case where you'll want to extend `getValue($field)`.
 
-Here I'm showing different ways of doing it for different reasons.
 ```php
-    public getValue($field) {
-        switch($field) {
-            case 'HeightCM':
-                return static::inchesToCM($this->Height);
-            case 'calculateTax':
-                return $this->calculateTaxTotal();
-            default:
-                return parent::getValue($field);
-        }
-    }
+public function getValue($field)
+{
+    switch ($field) {
+        case 'HeightCM':
+            return static::inchesToCM($this->Height);
 
-    public static function inchesToCM($value)
-    {
-        return $value * 2.54;
-    }
+        case 'calculateTax':
+            return $this->calculateTaxTotal();
 
-    public function calculateTaxTotal() {
-        $taxTotal = 0;
-        if($state = $this->getStateTaxRate()) {
-            $taxTotal += ($state * $this->Price);
-        }
-        if($local = $this->getLocalTaxRate()) {
-            $taxTotal += ($local * $this->Price);
-        }
-        return $taxTotal;
+        default:
+            return parent::getValue($field);
     }
+}
+
+public static function inchesToCM($value)
+{
+    return $value * 2.54;
+}
+
+public function calculateTaxTotal()
+{
+    $taxTotal = 0;
+    if ($state = $this->getStateTaxRate()) {
+        $taxTotal += ($state * $this->Price);
+    }
+    if ($local = $this->getLocalTaxRate()) {
+        $taxTotal += ($local * $this->Price);
+    }
+    return $taxTotal;
+}
 ```
 
 ### Get Models By Custom Join
-In this example we let the table names come right from the class. One thing less to remember. We also make sure our query only gives us the one model we actually want to instantiate from the data. This way we can do complex conditions on other tables in relation to the model we care about. Here we are pulling all BlogPost objects by TagID.
+In this example we let the table names come right from the class. We also make sure our query only gives us the one model we actually want to instantiate from the data.
 
 #### Standalone Example
-
-----
 
 ```php
 if (App::$App->is_loggedin()) {
@@ -1094,8 +832,9 @@ $BlogPosts = BlogPost::getAllByQuery(
 
 #### Same thing as a Dynamic Field
 ```php
-public getValue($field) {
-    switch($field) {
+public function getValue($field)
+{
+    switch ($field) {
         case 'getAllByTag':
             return static::getAllByTag($_REQUEST['tag']);
         default:
@@ -1103,8 +842,9 @@ public getValue($field) {
     }
 }
 
-public static function getAllByTag($slug) {
-    if($Tag = Tag::getByField('Slug', $slug)) {
+public static function getAllByTag($slug)
+{
+    if ($Tag = Tag::getByField('Slug', $slug)) {
         if (App::$App->is_loggedin()) {
             $where = "`Status` IN ('Draft','Published')";
         } else {
@@ -1121,6 +861,6 @@ public static function getAllByTag($slug) {
                 $Tag->ID,
             ]
         );
-    } // if
-} // getAllByTag
+    }
+}
 ```

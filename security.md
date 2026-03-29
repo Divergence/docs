@@ -2,23 +2,23 @@
 
 # Security
 
-This section documents the security primitives that exist today across the framework and the `technexus` example application.
+This section documents the security primitives that exist today across the framework.
 
 The important split is:
 
 - the framework ships a reusable session model and controller access hooks
-- the example app shows one concrete user model and login flow
+- your application defines the actual user model and login policy
 - authentication policy is still application-defined
 
 ## User Model
 
 The framework does not currently ship a built-in `User` model class.
 
-The example application in `technexus` defines a minimal user model in `src/Models/User.php`:
+A minimal application user model commonly looks like this:
 
 ```php
 <?php
-namespace technexus\Models;
+namespace project\Models;
 
 class User extends \Divergence\Models\Model
 {
@@ -61,31 +61,31 @@ Important built-in session fields include:
 - `ContextClass`
 - `ContextID`
 
-The example application uses a thin subclass:
+The session model uses a `binary` field for `LastIP`, and its getter/setter logic already normalizes that field correctly for SQLite and PostgreSQL.
+
+A thin subclass is usually enough when the framework session behavior already matches your application:
 
 ```php
 <?php
-namespace technexus\Models;
+namespace project\Models;
 
 class Session extends \Divergence\Models\Auth\Session
 {
 }
 ```
 
-That is enough when the framework session behavior already matches your application.
-
 ## Authentication
 
 Authentication is application-defined, not framework-enforced.
 
-The example app implements authentication in `technexus\App`:
+A common app bootstrap flow is:
 
 1. bootstrap a session with `Session::getFromRequest()`
 2. inspect posted login credentials
 3. look up the user by email
 4. verify the password hash
 5. write the user ID into `Session->CreatorID`
-6. save the session and redirect
+6. save the session
 
 The relevant shape is:
 
@@ -106,7 +106,7 @@ This is intentionally simple:
 
 ## Logged-In State
 
-The example app exposes a simple `is_loggedin()` helper:
+A simple helper often looks like:
 
 ```php
 public function is_loggedin()
@@ -136,17 +136,56 @@ For `RecordsRequestHandler` and `MediaRequestHandler`, the important hooks are:
 - `checkUploadAccess()`
 - `checkAPIAccess()`
 
-The example app defines reusable permission traits for those hooks.
+Reusable permission traits are the normal pattern.
 
 ### Logged-In Permissions
 
-The `technexus\Controllers\Records\Permissions\LoggedIn` trait requires a logged-in session for browse, read, write, upload, and API access.
+```php
+<?php
+namespace project\Controllers\Records\Permissions;
+
+use project\App as App;
+use Divergence\Models\ActiveRecord;
+
+trait LoggedIn
+{
+    public function is()
+    {
+        return App::$App->is_loggedin();
+    }
+
+    public function checkBrowseAccess($arguments)
+    {
+        return $this->is();
+    }
+
+    public function checkReadAccess(ActiveRecord $Record)
+    {
+        return $this->is();
+    }
+
+    public function checkWriteAccess(ActiveRecord $Record)
+    {
+        return $this->is();
+    }
+
+    public function checkUploadAccess()
+    {
+        return $this->is();
+    }
+
+    public function checkAPIAccess()
+    {
+        return $this->is();
+    }
+}
+```
 
 ### Admin Write, Guest Read
 
-The `AdminWriteGuestRead` trait allows public browse and read access while restricting writes to logged-in users.
+Another common pattern is public browse/read access with restricted writes.
 
-This pattern is a good fit when:
+This is a good fit when:
 
 - content should be publicly visible
 - edits should be limited to staff or authenticated users
@@ -156,10 +195,10 @@ This pattern is a good fit when:
 If you want the minimum viable auth stack in a Divergence app:
 
 1. Create a `User` model with `Email` and `PasswordHash`.
-2. Subclass `Divergence\Models\Auth\Session`.
-3. Bootstrap the session in your `App::init()`.
+2. Subclass `Divergence\Models\Auth\Session` or use it directly.
+3. Bootstrap the session in your `App::init()` or equivalent startup path.
 4. Verify passwords with `password_verify`.
 5. Store the logged-in user ID in `Session->CreatorID`.
 6. Enforce access in controller permission hooks.
 
-That is the current real pattern shown by the codebase.
+That is the current practical pattern shown by the framework code.

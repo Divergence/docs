@@ -3,6 +3,8 @@
 [![Latest Stable Version](https://poser.pugx.org/divergence/divergence/v/stable)](https://packagist.org/packages/divergence/divergence)
 [![License](https://poser.pugx.org/divergence/divergence/license)](https://packagist.org/packages/divergence/divergence)
 
+These docs are written against the current `../framework` worktree. The framework still has the same overall shape as the older docs, but several internals have moved since the earlier documentation was written: controller actions are split into endpoint classes, the model getter layer now routes through `Factory`, and MySQL/PostgreSQL/SQLite support is a real first-class runtime concern.
+
 ## Table of Contents
 - ### [Getting Started](/gettingstarted.md)
     - [Server Prerequisites](/gettingstarted.md#server-prerequisites)
@@ -10,11 +12,15 @@
     - [How to Bootstrap Manually (Advanced)](/gettingstarted.md#how-to-bootstrap-manually-advanced)
     - [Establish Your Classes Directory](/gettingstarted.md#establish-your-classes-directory)
     - [Configure Database Access](/gettingstarted.md#configure-database-access)
+    - [Take Over Control From The Framework](/gettingstarted.md#take-over-control-from-the-framework)
     - [Configuring nginx or apache2 Servers](/gettingstarted.md#configuring-nginx-or-apache2-servers)
-    
+
 - ### [Architectural Concepts](/architecture.md)
     - [Request Respond Emit](/architecture.md#request-respond-emit)
-    - [Tree Routing](/controllers.md#intro-to-tree-routing)
+    - [Boot Flow](/architecture.md#boot-flow)
+    - [Path Stack Routing](/architecture.md#path-stack-routing)
+    - [Response Builders](/architecture.md#response-builders)
+    - [Endpoint Based Controllers](/architecture.md#endpoint-based-controllers)
 
 - ### [Command Line Tool](/cli.md)
     - [Installation](/cli.md#installation)
@@ -33,17 +39,19 @@
     - [Minimum JSON-To-DB Example](/agentic-mvp-guide.md#minimum-json-to-db-example)
 
 - ### [Project Structure](/projectstructure.md)
-    - [Load Order](/projectstructure.md#load-order)
+    - [Load Order](/projectstructure.md#loading-order)
     - [Folder Structure](/projectstructure.md#folder-structure)
     - [The App Class](/projectstructure.md#the-app-class)
     - [Configs](/projectstructure.md#configs)
-    - [Development & Production](/projectstructure.md#development---production)
+    - [Development & Production](/projectstructure.md#development--production)
+    - [Database Labels](/projectstructure.md#database-labels)
     - [Error Handling](/projectstructure.md#error-handling)
 
 - ### [ORM](/orm.md#orm)
     - [Model Architecture](/orm.md#model-architecture)
     - [Making a Basic Model](/orm.md#making-a-basic-model)
     - [Create, Update, and Delete](/orm.md#create-update-and-delete)
+    - [Getter Layer and Factory Runtime](/orm.md#getter-layer-and-factory-runtime)
     - [Versioning](/orm.md#versioning)
     - [Relationships](/orm.md#relationships)
     - [Relationships Reference](/orm.md#relationships-reference)
@@ -59,7 +67,7 @@
     - [RequestHandler](/controllers.md#requesthandler)
     - [Your Own Controllers](/controllers.md#your-own-controllers)
     - [RecordsRequestHandler](/controllers.md#recordsrequesthandler)
-        - [Building an API](/controllers.md#recordsrequesthandler)
+        - [Building an API](/controllers.md#building-an-api)
         - [Permissions](/controllers.md#permissions)
         - [Security](/controllers.md#security)
         - [JSON API Reference](/controllers.md#json-api-reference)
@@ -70,9 +78,11 @@
             - [Delete One Record](/controllers.md#delete-one-record)
             - [Create or Edit Multiple Records](/controllers.md#create-or-edit-multiple-records)
             - [Delete Multiple Records](/controllers.md#delete-multiple-records)
+        - [MediaRequestHandler](/controllers.md#mediarequesthandler)
 
 - ### [Views](/views.md)
     - [Responding with a Template](/views.md#responding-with-a-template)
+    - [Template Lookup Rules](/views.md#template-lookup-rules)
 
 - ### [Security](/security.md)
     - [User Model](/security.md#user-model)
@@ -85,6 +95,7 @@
 - ### [Developing](/developing.md)
     - [Get the Source Code](/developing.md#get-the-source-code)
     - [Unit Testing](/developing.md#unit-testing)
+    - [How Mock Data is Made](/developing.md#how-mock-data-is-made)
     - [Style Guide](/developing.md#style-guide)
 
 - ### [Addendum](/addendum.md)

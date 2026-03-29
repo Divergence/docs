@@ -1,85 +1,84 @@
 ### [⤺ Back to Table of Contents](/README.md#divergence-framework-documentation)
 
 # Controllers
-Divergence comes with a suite of controllers to aid in building APIs rapidly as well as a build in helper class for building your own controllers.
+Divergence comes with a suite of controllers to aid in building APIs rapidly as well as a built in helper class for building your own controllers.
 
 ## Intro to Tree Routing
-Divergence does away with routing configuration files. Instead controllers "take over" a directory path during run time bubbling up from the Main application controller to other controllers until eventually one of the controllers responds to the request and ends the PHP thread.
+Divergence does away with routing configuration files. Instead controllers "take over" a directory path during runtime, bubbling down from the main application controller to other controllers until eventually one of the controllers responds to the request and ends the PHP thread.
 
-To illustrate how this works in practice let's take a look at this simple example:
+To illustrate how this works in practice, let's take a look at this simple example:
+
 ```php
 <?php
 namespace application\Controllers;
 
+use Divergence\Responders\TwigBuilder;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 class Main extends \Divergence\Controllers\RequestHandler
 {
-    public string $path;
-    protected ServerRequestInterface $request;
-    
     public function __construct()
     {
-        $this->path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $this->responseBuilder = TwigBuilder::class;
     }
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $this->request = $request;
         switch ($action = $this->shiftPath()) {
             case 'admin':
                 return (new Admin())->handle($request);
-                
+
             case 'api':
                 return (new API())->handle($request);
 
             case 'media':
                 return (new Media())->handle($request);
-                
-            case 'logout':
-                return $this->logout();
-                
+
             default:
-                return $this->notfound();
+                return $this->respond('home.twig');
         }
     }
 }
 ```
-By default our file `/public/index.php` will run 
+
+By default our file `/public/index.php` will run:
+
 ```php
 require(__DIR__.'/../bootstrap/autoload.php');
 require(__DIR__.'/../bootstrap/app.php');
 require(__DIR__.'/../bootstrap/router.php');
 ```
 
-Subsequently these 3 requires run this code:
+Subsequently these 3 requires run code equivalent to:
+
 ```php
-use technexus\App as App;
 define('DIVERGENCE_START', microtime(true));
 require(__DIR__.'/../vendor/autoload.php');
+
+use project\App as App;
 
 $app = new App(realpath(__DIR__.'/../'));
 $app->handleRequest();
 ```
 
-Typically the name of the application will be different so of course your namespace will be different. You *should* extend the App class and write your own handler.
+Typically the name of the application will be different, so of course your namespace will be different. You *should* extend the App class and write your own root handler.
 
 ### About `$this->shiftPath()`
-`$this->shiftPath()` returns the next directory in the request uri every time it is executed. The method comes with 
-For example for this path:
+`$this->shiftPath()` returns the next directory in the request URI every time it is executed.
+
+For this path:
 
 `/api/blog/1/edit`
 
-`shiftPath()` will return 'api', then 'blog',' then '1', and finally 'edit'.
+`shiftPath()` will return `api`, then `blog`, then `1`, and finally `edit`.
 
-If there is nothing left in the stack it will return false.
+If there is nothing left in the stack it will return `false`.
 
-Utilizing this method it doesn't matter where in the tree the controller is. It will always be able to pick up from where it is currently.
-
+Utilizing this method it does not matter where in the tree the controller is. It will always be able to pick up from where it is currently.
 
 ## RequestHandler
-All Divergence controllers extend from abstract class `Divergence\Controllers\RequestHandler`.
+All Divergence controllers extend abstract class `Divergence\Controllers\RequestHandler`.
 
 RequestHandler keeps track of the path, where you are in it, and provides utility methods for responding to a request.
 
@@ -87,40 +86,54 @@ RequestHandler keeps track of the path, where you are in it, and provides utilit
 ```php
 $this->responseBuilder
 ```
-Current Divergence chooses response format through the response builder attached to the controller. Historically older versions documented a response-mode flag, but the current RequestHandler API exposes `respond()` and uses `$this->responseBuilder`.
 
-| ResponseMode | Description |
+Current Divergence chooses response format through the response builder attached to the controller. The base helper is:
+
+```php
+respond($responseID, $responseData = [])
+```
+
+| Response Builder | Description |
 | --- | --- |
-| twig/html | Responds with a Twig template looking in `App::$ApplicationPath.'/views/'` for a template. |
-| json | Print a JSON string and sends header `Content-type: application/json`. |
-| jsonp | Prints valid JS code that sets a variable `var data` to the data being output. |
-| media | Streams file data and can support byte ranges. |
-| empty | Returns an empty response body with status and headers only. |
+| `TwigBuilder` | Responds with a Twig template looking in `App::$App->ApplicationPath.'/views/'` for a template. |
+| `JsonBuilder` | Prints a JSON string and sends `Content-Type: application/json`. |
+| `JsonpBuilder` | Prints valid JS code that sets a variable `var data` to the data being output. |
+| `MediaBuilder` | Streams file data and supports byte ranges. |
+| `EmptyBuilder` | Returns an empty response body with status and headers only. |
 
 ### API Reference
 | Method | Purpose |
 | --- | --- |
-| peekPath | Returns the next path without moving the marker over. |
-| shiftPath | Returns the next path while moving the marker over. |
-| unshiftPath($path) | Lets you add a path to the internal path stack. |
-| respond($responseID, $responseData = []) | Builds a response using the current response builder. |
+| `peekPath` | Returns the next path without moving the marker over. |
+| `shiftPath` | Returns the next path while moving the marker over. |
+| `unshiftPath($path)` | Lets you add a path to the internal path stack. |
+| `respond($responseID, $responseData = [])` | Builds a response using the current response builder. |
 
 These are controller methods intended to be used from inside your handlers.
 
+### Endpoint Registration
+The current controller base also supports endpoint registration internally:
+
+- handlers register endpoint classes
+- `__call()` lazily instantiates endpoint objects
+- request-handling methods like `handleBrowseRequest()` are delegated into those endpoint classes
+
+This is mostly an internal implementation detail, but it explains why current controller code is more modular than the older docs suggested.
+
 ## Your Own Controllers
-Typically your app should have a Controller namespace under your main Application namespace which means you should have a `src/Controllers` directory. This directory is recommended for storing all your controllers so that they are easy to find. You can create sub directories for various types of controllers.
+Typically your app should have a controller namespace under your main application namespace, which means you should have a `src/Controllers` directory. This directory is recommended for storing all your controllers so that they are easy to find. You can create subdirectories for various types of controllers.
 
-You should organize your controllers by type or subdivision of your project. For example you might organize controllers related to an admin control panel in a folder called admin.
+You should organize your controllers by type or subdivision of your project. For example you might organize controllers related to an admin control panel in a folder called `Admin`.
 
-## Using a third party routing library
+## Using a Third Party Routing Library
 Divergence in no way prevents you from using third-party routing libraries. Simply register the third party library in your application's root controller `handle(...)` flow.
 
-### Built in controller classes for your convenience
+### Built in Controller Classes for Your Convenience
 | Controller | Description |
 | --- | --- |
-| `RequestHandler` | A basic blank controller. See earlier section. |
-| `RecordsRequestHandler` | Provides a basic CRUD API for Models extending `Divergence\Models\ActiveRecord` |
-| `MediaRequestHandler` | Provides a basic CRUD API for Media extending `Divergence\Models\ActiveRecord`. Provides automatic thumbnailing, uploading, and other media features. |
+| `RequestHandler` | A basic blank controller. |
+| `RecordsRequestHandler` | Provides a basic CRUD API for models extending `Divergence\Models\ActiveRecord`. |
+| `MediaRequestHandler` | Provides a basic CRUD/media API for `Divergence\Models\Media\Media` and subclasses. Includes upload, thumbnail, streaming, and other media features. |
 
 *Feel free to write your own*
 
@@ -129,6 +142,7 @@ Divergence in no way prevents you from using third-party routing libraries. Simp
 
 ### Building an API
 *Example class*
+
 ```php
 <?php
 namespace project\Controllers\Records;
@@ -136,29 +150,40 @@ namespace project\Controllers\Records;
 class BlogPost extends \Divergence\Controllers\RecordsRequestHandler
 {
     use Permissions\LoggedIn;
-    
+
     public static $recordClass = 'project\\Models\\BlogPost';
 }
 ```
 
-### Don't forget to add this controller to another controller's handleRequest tree.
-```php
-    /**
-     * Routes
-     *  /api/blogpost
-     *  /api/tags
-     */
-    public function handle(RequestInterface $request):ResponseInterface
-    {
-        switch ($action = $this->shiftPath()) {
-            case 'blogpost':
-                return (new BlogPost())->handle($request);
+Internally the current implementation registers dedicated endpoint classes for:
 
-            case 'tags':
-                return (new Tag())->handle($request);
-            
-        }
+- browse
+- record
+- create
+- edit
+- delete
+- multi-save
+- multi-destroy
+
+The public API is still the familiar CRUD surface, but the internals are now split into focused endpoint classes instead of being one large handler.
+
+### Don't Forget to Add This Controller to Another Controller's `handleRequest` Tree
+```php
+/**
+ * Routes
+ *  /api/blogpost
+ *  /api/tags
+ */
+public function handle(ServerRequestInterface $request): ResponseInterface
+{
+    switch ($action = $this->shiftPath()) {
+        case 'blogpost':
+            return (new BlogPost())->handle($request);
+
+        case 'tags':
+            return (new Tag())->handle($request);
     }
+}
 ```
 
 ### Permissions
@@ -168,9 +193,8 @@ class BlogPost extends \Divergence\Controllers\RecordsRequestHandler
 <?php
 namespace project\Controllers\Records\Permissions;
 
-use \project\App as App;
-
-use \Divergence\Models\ActiveRecord as ActiveRecord;
+use project\App as App;
+use Divergence\Models\ActiveRecord;
 
 trait LoggedIn
 {
@@ -184,7 +208,7 @@ trait LoggedIn
          */
         return App::$App->is_loggedin();
     }
-    
+
     public function checkBrowseAccess($arguments)
     {
         return $this->is();
@@ -194,7 +218,7 @@ trait LoggedIn
     {
         return $this->is();
     }
-    
+
     public function checkWriteAccess(ActiveRecord $Record)
     {
         return $this->is();
@@ -204,16 +228,15 @@ trait LoggedIn
     {
         return $this->is();
     }
-    
+
     /*
-     *  have this return false to disable API access entirely
+     * have this return false to disable API access entirely
      */
     public function checkAPIAccess()
     {
         return $this->is();
     }
 }
-
 ```
 
 ## Security
@@ -229,35 +252,44 @@ The main security hooks you should care about are:
 
 In practice:
 
-- `checkAPIAccess()` gates JSON and JSONP API access
-- `checkWriteAccess()` should protect create, edit, and delete paths
-- `checkUploadAccess()` should protect media uploads
+- `checkAPIAccess()` gates JSON API access
+- `checkWriteAccess()` protects create, edit, delete, and batch save/destroy paths
+- `checkUploadAccess()` protects media uploads
 - shared authorization logic belongs in reusable traits
 
-The framework has historical session and auth pieces, but the most reliable pattern in real applications is to keep authentication in the application layer and let controllers ask the app about the current user or session.
-
 ## JSON API Reference
-This API Reference is for classes that extend `Divergence\RecordsRequestHandler`.
+This API reference is for classes that extend `Divergence\Controllers\RecordsRequestHandler`.
 
-For simplicity lets assume we have our api controller at `/blogposts/`.
+For simplicity let's assume we have our API controller mounted at `/api/tags/`.
+
+### Route Shape
+One important current detail:
+
+- JSON mode is entered by routing through `/json`
+- that means JSON paths look like `/api/tags/json/...`
+- they do **not** look like `/api/tags/.../json`
+
+That matches the current `RecordsRequestHandler::handle()` implementation.
 
 ### Browse
-`URI: /blogposts/json`
+`URI: /api/tags/json`
 
 `Method: GET, POST`
 
 ### Parameters
 | Name | Type | Description |
 | --- | --- | --- |
-| offset | number | Position offset in the database. |
-| limit | number | Number of records to pull from offset. |
-| sort | json array | An array of order key value pairs. |
-| filter | json array | An array of key value pairs. By default filters will use the `AND` operator. |
+| `offset` | number | Position offset in the database. |
+| `start` | number | Alias for `offset`. |
+| `limit` | number | Number of records to pull from offset. |
+| `sort` | JSON array | An array of order key-value pairs. |
+| `filter` | JSON array | An array of key-value pairs. By default filters use `AND`. |
 
 ##### All of these are accepted as GET or POST
 
 ### Example Sorting
 Specify sort rules with a JSON encoded array.
+
 ```php
 [
     [
@@ -265,37 +297,38 @@ Specify sort rules with a JSON encoded array.
         'direction' => 'ASC',
     ],
     [
-        'property' =>  'FirstName',
-        'direction' =>  'ASC',
+        'property' => 'FirstName',
+        'direction' => 'ASC',
     ]
 ]
 ```
 
 ### Filtering
 Specify filter rules with a JSON encoded array.
+
 ```php
 [
     [
         'property' => 'FirstName',
-        'value'     => 'John',
+        'value' => 'John',
     ],
     [
-        'property'  =>  'LastName',
-        'value'     =>  'Doe',
+        'property' => 'LastName',
+        'value' => 'Doe',
     ]
 ]
 ```
 
 ### Example Return
-`Content-type: application/json`
+`Content-Type: application/json`
 ```js
 {
     "success": true,
-    "data":[ /* array of objects corresponding to your model */ ],
-    "conditions":[], // the calculated conditions for the query based on filters you provided and controller configurables
-    "total":"5", // number of records in the database total
-    "limit":false, // the number of objects actually returned or false if unlimited
-    "offset":false // the offset provided by you
+    "data": [ /* array of objects corresponding to your model */ ],
+    "conditions": [],
+    "total": "5",
+    "limit": false,
+    "offset": false
 }
 ```
 
@@ -307,7 +340,7 @@ Specify filter rules with a JSON encoded array.
   "data": [
     {
       "ID": "1",
-      "Class": "technexus\\Models\\Tag",
+      "Class": "project\\Models\\Tag",
       "Created": 1523869087,
       "CreatorID": null,
       "Tag": "ssh",
@@ -315,7 +348,7 @@ Specify filter rules with a JSON encoded array.
     },
     {
       "ID": "2",
-      "Class": "technexus\\Models\\Tag",
+      "Class": "project\\Models\\Tag",
       "Created": 1523870415,
       "CreatorID": "1",
       "Tag": "linux",
@@ -329,6 +362,16 @@ Specify filter rules with a JSON encoded array.
 }
 ```
 
+Browse with sort and filter:
+
+```bash
+curl -sG http://localhost:8080/api/tags/json \
+  --data-urlencode 'limit=10' \
+  --data-urlencode 'offset=0' \
+  --data-urlencode 'sort=[{"property":"Created","direction":"DESC"}]' \
+  --data-urlencode 'filter=[{"property":"Tag","value":"linux"}]' | jq
+```
+
 ### Example Failure
 `$ curl -s http://localhost:8080/api/blogposts/json | jq`
 ```js
@@ -339,14 +382,13 @@ Specify filter rules with a JSON encoded array.
   }
 }
 ```
+
 This will be returned if your controller's `checkAPIAccess()` method returns false.
 
-It returns true by default. You must redefine it to setup permissions.
-
-If you plan to share permissions you should build yourself a permissions trait to re-use.
+It returns true by default. You must redefine it to set up permissions.
 
 ### One Record
-`URI: /blogposts/json/:handle`
+`URI: /api/tags/json/:handle`
 
 `Method: GET, POST`
 
@@ -359,23 +401,23 @@ The generic `RecordsRequestHandler` resolves records through `getRecordByHandle(
 {
   "success": true,
   "data": {
-      "ID": "2",
-      "Class": "technexus\\Models\\Tag",
-      "Created": 1523870415,
-      "CreatorID": "1",
-      "Tag": "linux",
-      "Slug": "linux"
+    "ID": "2",
+    "Class": "project\\Models\\Tag",
+    "Created": 1523870415,
+    "CreatorID": "1",
+    "Tag": "linux",
+    "Slug": "linux"
   }
 }
 ```
 
 ### Edit One Record
-`URI: /blogposts/json/:id/edit`
+`URI: /api/tags/json/:handle/edit`
 
-`Method: POST`
+`Method: POST, PUT`
 
 ### Examples
-Values that do not belong to this model are completely ignored. The record is returned.
+Values that do not belong to this model are ignored. The record is returned.
 
 `$ curl -d "param1=value1&param2=value2" -X POST -s http://localhost:8080/api/tags/json/2/edit | jq`
 
@@ -384,7 +426,7 @@ Values that do not belong to this model are completely ignored. The record is re
   "success": true,
   "data": {
     "ID": "2",
-    "Class": "technexus\\Models\\Tag",
+    "Class": "project\\Models\\Tag",
     "Created": 1523870415,
     "CreatorID": "1",
     "Tag": "linux",
@@ -402,7 +444,7 @@ Trying to change the primary key will be ignored.
   "success": true,
   "data": {
     "ID": "2",
-    "Class": "technexus\\Models\\Tag",
+    "Class": "project\\Models\\Tag",
     "Created": 1523870415,
     "CreatorID": "1",
     "Tag": "linux",
@@ -419,7 +461,7 @@ Changes will be returned with the record.
   "success": true,
   "data": {
     "ID": "2",
-    "Class": "technexus\\Models\\Tag",
+    "Class": "project\\Models\\Tag",
     "Created": 1523870415,
     "CreatorID": "1",
     "Tag": "curl",
@@ -428,16 +470,16 @@ Changes will be returned with the record.
 }
 ```
 
-Feel free to use a JSON string as your data payload with `Content-Type: application/json`
+Feel free to use a JSON string as your data payload with `Content-Type: application/json`.
 
-`curl -d '{"Tag":"JSON", "Slug":"json"}' -H "Content-Type: application/json" -X POST -s http://localhost:8080/api/tags/json/2/edit | jq`
+`$ curl -d '{"Tag":"JSON", "Slug":"json"}' -H "Content-Type: application/json" -X POST -s http://localhost:8080/api/tags/json/2/edit | jq`
 
 ```js
 {
   "success": true,
   "data": {
     "ID": "2",
-    "Class": "technexus\\Models\\Tag",
+    "Class": "project\\Models\\Tag",
     "Created": 1523870415,
     "CreatorID": "1",
     "Tag": "JSON",
@@ -455,7 +497,7 @@ Validation failures bubble up from the model cleanly.
   "success": false,
   "data": {
     "ID": "2",
-    "Class": "technexus\\Models\\Tag",
+    "Class": "project\\Models\\Tag",
     "Created": 1523870415,
     "CreatorID": "1",
     "Tag": "J",
@@ -466,27 +508,27 @@ Validation failures bubble up from the model cleanly.
   }
 }
 ```
+
 Know which field caused the error and why.
 
 [Click here for many validation definition examples.](/orm.md#validation)
 
 ### Create One Record
-`URI: /blogposts/json/create`
+`URI: /api/tags/json/create`
 
 `Method: POST`
 
-The return will provide you with the new primary key and unix timestamp of when it was created.
+The return will provide you with the new primary key and timestamp of when it was created.
 
 ### Example
-
-`curl -d '{"Tag":"ActiveRecord", "Slug":"activerecord"}' -H "Content-Type: application/json" -X POST -s http://localhost:8080/api/tags/json/create | jq`
+`$ curl -d '{"Tag":"ActiveRecord", "Slug":"activerecord"}' -H "Content-Type: application/json" -X POST -s http://localhost:8080/api/tags/json/create | jq`
 
 ```js
 {
   "success": true,
   "data": {
     "ID": "8",
-    "Class": "technexus\\Models\\Tag",
+    "Class": "project\\Models\\Tag",
     "Created": 1527133465,
     "CreatorID": null,
     "Tag": "ActiveRecord",
@@ -496,9 +538,9 @@ The return will provide you with the new primary key and unix timestamp of when 
 ```
 
 ### Delete One Record
-`URI: /blogposts/json/:id/delete`
+`URI: /api/tags/json/:handle/delete`
 
-`Method: POST, DELETE`
+`Method: POST`
 
 The return will provide you with the data from the model that was deleted.
 
@@ -509,7 +551,7 @@ The return will provide you with the data from the model that was deleted.
   "success": true,
   "data": {
     "ID": "8",
-    "Class": "technexus\\Models\\Tag",
+    "Class": "project\\Models\\Tag",
     "Created": 1527133465,
     "CreatorID": null,
     "Tag": "ActiveRecord",
@@ -518,12 +560,152 @@ The return will provide you with the data from the model that was deleted.
 }
 ```
 
-### Create or Edit Multiple Records
-`URI: /blogposts/json/save`
+If you request the delete URL without POST, the generic endpoint returns a confirmation response instead of destroying the record immediately.
 
-`METHOD: POST`
+### Create or Edit Multiple Records
+`URI: /api/tags/json/save`
+
+`METHOD: POST, PUT`
+
+The current batch save endpoint expects a payload shaped like:
+
+```json
+{
+  "data": [
+    { "Tag": "one", "Slug": "one" },
+    { "ID": 2, "Tag": "updated", "Slug": "updated" }
+  ]
+}
+```
+
+Example:
+
+```bash
+curl -s -X POST http://localhost:8080/api/tags/json/save \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": [
+      { "Tag": "Batch One", "Slug": "batch-one" },
+      { "ID": 2, "Tag": "Batch Updated", "Slug": "batch-updated" }
+    ]
+  }' | jq
+```
+
+Representative response:
+
+```js
+{
+  "success": true,
+  "data": [
+    {
+      "ID": "9",
+      "Tag": "Batch One",
+      "Slug": "batch-one"
+    },
+    {
+      "ID": "2",
+      "Tag": "Batch Updated",
+      "Slug": "batch-updated"
+    }
+  ],
+  "failed": []
+}
+```
 
 ### Delete Multiple Records
-`URI: /blogposts/json/delete`
+`URI: /api/tags/json/destroy`
 
-`METHOD: POST`
+`METHOD: POST, PUT, DELETE`
+
+The current batch delete endpoint expects `data` as either:
+
+- an array of IDs
+- an array of objects containing the primary key
+
+Example:
+
+```bash
+curl -s -X DELETE http://localhost:8080/api/tags/json/destroy \
+  -H "Content-Type: application/json" \
+  -d '{ "data": [8, 9] }' | jq
+```
+
+Representative response:
+
+```js
+{
+  "success": true,
+  "data": [
+    { "ID": "8" },
+    { "ID": "9" }
+  ],
+  "failed": []
+}
+```
+
+If `data` is malformed you will get an error similar to:
+
+```js
+{
+  "success": false,
+  "failed": {
+    "errors": "Save expects \"data\" field as array of records."
+  }
+}
+```
+
+## MediaRequestHandler
+`Divergence\Controllers\MediaRequestHandler` extends the generic records controller with media-specific behavior for `Divergence\Models\Media\Media`.
+
+In addition to the record endpoints above, it registers endpoints for:
+
+- upload
+- open/media streaming
+- info
+- download
+- caption
+- thumbnail
+- media browse
+- media delete
+
+Important current behavior:
+
+- byte-range requests are supported for streamed media
+- cache headers and `ETag` headers are added on media responses
+- uploads default to the file field name `mediaFile`
+- JSON mode is again entered through `/json` at the start of the media controller path
+
+Examples:
+
+Browse media as JSON:
+
+```bash
+curl -s http://localhost:8080/media/json/browse | jq
+```
+
+Upload media:
+
+```bash
+curl -s -X POST http://localhost:8080/media/json/upload \
+  -F 'mediaFile=@./tests/assets/logo.png' \
+  -F 'Caption=Example upload' | jq
+```
+
+Get media metadata:
+
+```bash
+curl -s http://localhost:8080/media/json/info/1 | jq
+```
+
+Download the original media:
+
+```bash
+curl -OJ http://localhost:8080/media/download/1/logo.png
+```
+
+Stream partial media:
+
+```bash
+curl -i http://localhost:8080/media/open/1 \
+  -H 'Range: bytes=0-1023'
+```
