@@ -4,7 +4,7 @@
 Divergence comes with a suite of controllers to aid in building APIs rapidly as well as a built in helper class for building your own controllers.
 
 ## Intro to Tree Routing
-Divergence does away with routing configuration files. Instead controllers "take over" a directory path during runtime, bubbling down from the main application controller to other controllers until eventually one of the controllers responds to the request and ends the PHP thread.
+Divergence does away with routing configuration files. Instead controllers "take over" a directory path during runtime, passing control from the main application controller to other controllers until one returns a response. The App passes that response to the emitter.
 
 To illustrate how this works in practice, let's take a look at this simple example:
 
@@ -33,6 +33,10 @@ class Main extends \Divergence\Controllers\RequestHandler
                 return (new API())->handle($request);
 
             case 'media':
+                return (new Media())->handle($request);
+
+            case 'thumbnail':
+                $this->unshiftPath('thumbnail');
                 return (new Media())->handle($request);
 
             default:
@@ -64,6 +68,8 @@ $app->handleRequest();
 
 Typically the name of the application will be different, so of course your namespace will be different. You *should* extend the App class and write your own root handler.
 
+`Admin`, `API`, and `Media` above are application controllers in the same namespace. Your `Media` controller can extend `Divergence\Controllers\MediaRequestHandler` and enforce your media access policy. The thumbnail branch puts the action back on the path so the media handler can initialize the request and dispatch it normally.
+
 ### About `$this->shiftPath()`
 `$this->shiftPath()` returns the next directory in the request URI every time it is executed.
 
@@ -87,7 +93,7 @@ RequestHandler keeps track of the path, where you are in it, and provides utilit
 $this->responseBuilder
 ```
 
-Current Divergence chooses response format through the response builder attached to the controller. The base helper is:
+Divergence chooses response format through the response builder attached to the controller. The base helper is:
 
 ```php
 respond($responseID, $responseData = [])
@@ -96,8 +102,8 @@ respond($responseID, $responseData = [])
 | Response Builder | Description |
 | --- | --- |
 | `TwigBuilder` | Responds with a Twig template looking in `App::$App->ApplicationPath.'/views/'` for a template. |
-| `JsonBuilder` | Prints a JSON string and sends `Content-Type: application/json`. |
-| `JsonpBuilder` | Prints valid JS code that sets a variable `var data` to the data being output. |
+| `JsonBuilder` | Builds JSON with `Content-Type: application/json`. |
+| `JsonpBuilder` | Builds JavaScript assigning `var data`; this is not a configurable JSONP callback. |
 | `MediaBuilder` | Streams file data and supports byte ranges. |
 | `EmptyBuilder` | Returns an empty response body with status and headers only. |
 
@@ -111,6 +117,8 @@ respond($responseID, $responseData = [])
 
 These are controller methods intended to be used from inside your handlers.
 
+`respond()` builds a response; it does not send it. Return the response and let the emitter handle output. When setting a status or header, use the returned response, for example `return $this->respond('error.twig')->withStatus(404);`.
+
 ### Endpoint Registration
 The current controller base also supports endpoint registration internally:
 
@@ -118,7 +126,7 @@ The current controller base also supports endpoint registration internally:
 - `__call()` lazily instantiates endpoint objects
 - request-handling methods like `handleBrowseRequest()` are delegated into those endpoint classes
 
-This is mostly an internal implementation detail, but it explains why current controller code is more modular than the older docs suggested.
+This keeps the action implementations in `Controllers/Records/Endpoints` and `Controllers/Media/Endpoints` while preserving the handler methods used by application code.
 
 ## Your Own Controllers
 Typically your app should have a controller namespace under your main application namespace, which means you should have a `src/Controllers` directory. This directory is recommended for storing all your controllers so that they are easy to find. You can create subdirectories for various types of controllers.
@@ -167,7 +175,7 @@ Internally the current implementation registers dedicated endpoint classes for:
 
 The public API is still the familiar CRUD surface, but the internals are now split into focused endpoint classes instead of being one large handler.
 
-### Don't Forget to Add This Controller to Another Controller's `handleRequest` Tree
+### Don't Forget to Add This Controller to Another Controller's `handle` Tree
 ```php
 /**
  * Routes
@@ -182,6 +190,9 @@ public function handle(ServerRequestInterface $request): ResponseInterface
 
         case 'tags':
             return (new Tag())->handle($request);
+
+        default:
+            return (new \GuzzleHttp\Psr7\Response())->withStatus(404);
     }
 }
 ```
@@ -206,7 +217,7 @@ trait LoggedIn
          * Of course you should use your own logic based on the
          * authentication system you have configured.
          */
-        return App::$App->is_loggedin();
+        return App::$App->isLoggedIn();
     }
 
     public function checkBrowseAccess($arguments)
@@ -220,11 +231,6 @@ trait LoggedIn
     }
 
     public function checkWriteAccess(ActiveRecord $Record)
-    {
-        return $this->is();
-    }
-
-    public function checkUploadAccess()
     {
         return $this->is();
     }
@@ -254,22 +260,28 @@ In practice:
 
 - `checkAPIAccess()` gates JSON API access
 - `checkWriteAccess()` protects create, edit, delete, and batch save/destroy paths
-- `checkUploadAccess()` protects media uploads
+- the upload endpoint calls `checkUploadAccess()`, but currently ignores a returned `false`; enforce media denial before dispatch or through an exception handled by your application
 - shared authorization logic belongs in reusable traits
+
+The defaults allow access. The `isLoggedIn()` method in the example is one you implement on your App, not a built-in method. Account-level settings alone do not enforce a policy. See [Security](security.md#binding-permissions) before exposing these endpoints.
 
 ## JSON API Reference
 This API reference is for classes that extend `Divergence\Controllers\RecordsRequestHandler`.
 
 For simplicity let's assume we have our API controller mounted at `/api/tags/`.
 
+The response bodies below are illustrative, not snapshots from a particular database. IDs, timestamps, counts, and validation messages depend on the model and fixtures. A `success: false` payload does not automatically change the HTTP status; customize error responses if your API requires specific status codes.
+
 ### Route Shape
-One important current detail:
+The `json` path segment chooses the response builder:
 
 - JSON mode is entered by routing through `/json`
 - that means JSON paths look like `/api/tags/json/...`
 - they do **not** look like `/api/tags/.../json`
 
 That matches the current `RecordsRequestHandler::handle()` implementation.
+
+An `Accept: application/json` header alone does not select this mode.
 
 ### Browse
 `URI: /api/tags/json`
@@ -305,6 +317,8 @@ Specify sort rules with a JSON encoded array.
 
 ### Filtering
 Specify filter rules with a JSON encoded array.
+
+These are model field names and values, not the in-memory `CriteriaGroup` API. Filters are added to the model's conditions by field name; repeating a property replaces its earlier value. Use an application endpoint when you need a different query shape or a restricted field allowlist.
 
 ```php
 [
@@ -435,7 +449,7 @@ Values that do not belong to this model are ignored. The record is returned.
 }
 ```
 
-Trying to change the primary key will be ignored.
+Trying to change an auto-increment field such as the default `ID` will be ignored. That is not a blanket guarantee for every custom primary key or other sensitive field. Restrict writable fields in your application.
 
 `$ curl -d "ID=2" -X POST -s http://localhost:8080/api/tags/json/2/edit | jq`
 
@@ -516,7 +530,7 @@ Know which field caused the error and why.
 ### Create One Record
 `URI: /api/tags/json/create`
 
-`Method: POST`
+`Method: POST, PUT`
 
 The return will provide you with the new primary key and timestamp of when it was created.
 
@@ -613,14 +627,17 @@ Representative response:
 ```
 
 ### Delete Multiple Records
+
+Batch operations process records individually. They are not all-or-nothing transactions, and `success` can be true when some records failed. Always inspect `failed` as well as `data` for both batch saves and batch deletes.
+
 `URI: /api/tags/json/destroy`
 
 `METHOD: POST, PUT, DELETE`
 
 The current batch delete endpoint expects `data` as either:
 
-- an array of IDs
-- an array of objects containing the primary key
+- an array of numeric IDs
+- an array of objects containing a numeric primary key
 
 Example:
 
@@ -709,3 +726,5 @@ Stream partial media:
 curl -i http://localhost:8080/media/open/1 \
   -H 'Range: bytes=0-1023'
 ```
+
+The [Media chapter](media.md) covers storage paths, import behavior, required tools, thumbnails, and streaming. Media routes use action-first paths such as `/media/open/1`, not the records controller's `/1/edit` pattern.

@@ -76,11 +76,15 @@ public static $fields = [
 ```
 
 #### About Default Field Configs
-By default, if you just have a string that will be treated as the name of the field for the model. In practice that means a PHP string and a short text column at the schema layer if the framework has to auto-create the table.
+In array mapping, a bare string is a field name with the default string configuration. Non-public instance properties can also be discovered as fields:
 
 ```php
 protected $title;
 ```
+
+Use `Column` to make the intended mapping explicit. Declare the database `type` for non-string fields; a PHP `int` declaration alone is not the same as `Column(type: 'integer')`. PHP property nullability does override the mapping's `notnull` setting, so make those declarations agree.
+
+Public properties are skipped by attribute field discovery. Keep mapped properties private or protected, and use the model's setters when changing fields from code that would otherwise bypass magic access.
 
 #### Automatically Create Tables
 If you try to use a model and the database responds with a table-not-found error, the framework can attempt to build the SQL, create the table, and rerun the original operation.
@@ -91,7 +95,7 @@ You can disable this behavior by setting:
 public static $autoCreateTables = false;
 ```
 
-Note the current property name is `autoCreateTables`.
+This only creates missing tables. It does not alter existing tables to match a changed model definition. Plan schema changes separately.
 
 ## Making a Basic Model
 Here's an example of a minimum model:
@@ -114,11 +118,15 @@ class Tag extends \Divergence\Models\Model
     public static $singularNoun = 'tag';
     public static $pluralNoun = 'tags';
 
-    #[Column(type: 'string', required: true, notnull: true)]
-    private $Tag;
+    #[Column(type: 'string')]
+    private string $Tag;
 
-    #[Column(type: 'string', blankisnull: true, notnull: false)]
-    private $Slug;
+    #[Column(type: 'string')]
+    private ?string $Slug;
+
+    public static $validators = [
+        ['field' => 'Tag', 'required' => true],
+    ];
 }
 ```
 
@@ -126,56 +134,48 @@ We get these fields from `\Divergence\Models\Model` as defaults:
 
 ```php
 #[Column(type: "integer", primary:true, autoincrement:true, unsigned:true)]
-private $ID;
+private int $ID;
 
-#[Column(type: "enum", notnull:true, values:[])]
-private $Class;
+#[Column(type: "enum", values:[])]
+private string $Class;
 
 #[Column(type: "timestamp", default:'CURRENT_TIMESTAMP')]
-private $Created;
+private string $Created;
 
-#[Column(type: "integer", notnull:false)]
-private $CreatorID;
+#[Column(type: "integer")]
+private ?int $CreatorID;
 ```
 
 ## Create, Update, and Delete
 Divergence ActiveRecord is simple and makes use of normal PHP object patterns whenever possible.
 
 ### Creating
-Example without defaults:
+For a new record, use `create()` or an empty constructor:
 
 ```php
 $Tag = new Tag();
-echo $Tag->Name; // prints null
-$Tag->Name = 'Divergence';
-echo $Tag->Name; // prints Divergence
+$Tag->Tag = 'Divergence';
+echo $Tag->Tag; // prints Divergence
 ```
 
-Example with record instantiation via constructor:
-
-```php
-$Tag = new Tag([
-    'Name' => 'Divergence',
-]);
-echo $Tag->Name; // prints Divergence
-```
+The constructor's array is raw record data, not the same thing as values passed to `create()`. A nonempty constructor array is treated as an existing record unless you explicitly mark it phantom. Use `create()` for new records so values pass through the setters and the object is marked for insertion.
 
 Example with record instantiation via `create()`:
 
 ```php
 $Tag = Tag::create([
-    'Name' => 'Divergence',
+    'Tag' => 'Divergence',
 ]);
-echo $Tag->Name; // prints Divergence
+echo $Tag->Tag; // prints Divergence
 ```
 
 Example with record instantiation via `create()` and save directly to the database:
 
 ```php
 $Tag = Tag::create([
-    'Name' => 'Divergence',
+    'Tag' => 'Divergence',
 ], true);
-echo $Tag->Name; // prints Divergence
+echo $Tag->Tag; // prints Divergence
 echo $Tag->ID; // prints ID assigned by the database auto increment
 ```
 
@@ -183,8 +183,8 @@ Another save example:
 
 ```php
 $Tag = new Tag();
-$Tag->Name = 'Divergence';
-echo $Tag->ID; // prints null
+$Tag->Tag = 'Divergence';
+var_dump($Tag->ID); // NULL before save
 $Tag->save();
 echo $Tag->ID; // prints ID assigned by the database auto increment
 ```
@@ -192,25 +192,28 @@ echo $Tag->ID; // prints ID assigned by the database auto increment
 ### Update
 ```php
 $Tag = Tag::getByID(1);
-echo $Tag->ID; // prints 1
-$Tag->Name = 'Divergence';
-$Tag->save();
+if ($Tag) {
+    $Tag->Tag = 'Divergence';
+    $Tag->save();
+}
 ```
 
 Get by field:
 
 ```php
 $Tag = Tag::getByField('ID', 1);
-echo $Tag->ID; // prints 1
-$Tag->Name = 'Divergence';
-$Tag->save();
+if ($Tag) {
+    $Tag->Tag = 'Divergence';
+    $Tag->save();
+}
 ```
 
 ### Delete
 ```php
 $Tag = Tag::getByID(1);
-echo $Tag->ID; // prints 1
-$Tag->destroy(); // record still exists in the variable
+if ($Tag) {
+    $Tag->destroy(); // record still exists in the variable
+}
 ```
 
 or statically:
@@ -221,7 +224,7 @@ Tag::delete(1); // returns true if affected rows > 0
 
 ## Getter Layer and Factory Runtime
 
-The public model API still looks like classic Divergence:
+The public model API includes:
 
 - `getByID`
 - `getByField`
@@ -234,16 +237,32 @@ The public model API still looks like classic Divergence:
 - `getAllByQuery`
 - `getUniqueHandle`
 
-But the current implementation is more modular than older docs implied.
-
-Today:
+Underneath those calls:
 
 - `Divergence\Models\Getters` is a thin forwarding trait
 - static getter calls route into `Divergence\Models\Factory`
 - `Factory` registers dedicated getter classes such as `GetByID`, `GetByField`, `GetAllByWhere`, and `GetUniqueHandle`
 - `Factory` also coordinates model metadata, instantiation, connection resolution, and storage caching
 
-That means the external API is stable, but the query/runtime plumbing behind it has been decomposed into smaller pieces.
+You normally call the model, not the factory directly. Single-object getters return a model or `null`. Raw single-record getters such as `getRecordByWhere()` return an associative row or `false`.
+
+Bulk getters return arrays unless the model opts into `InMemoryIndexing`, which makes hydrated results `RecordCollection` objects. See [Collections](collections.md#orm-collections). Raw-record getters still return rows.
+
+### Conditions and Options
+
+```php
+$Tags = Tag::getAllByWhere(['Slug' => 'divergence'], [
+    'order' => ['Tag' => 'ASC'],
+    'limit' => 25,
+    'offset' => 0,
+]);
+```
+
+Named conditions are mapped using the model fields. Raw condition strings are SQL, so don't concatenate untrusted request data into them.
+
+Common options are `order`, `limit`, `offset`, and `indexField`. `indexField` keys raw or array results by a field; it is not an in-memory search index. `calcFoundRows` defaults on when a limit is supplied. `extraColumns` and `having` are available for custom query expressions and should be checked against your backend.
+
+`getAllByQuery()` and `getByQuery()` accept SQL and optional formatting arguments. Those arguments are not PDO bindings. See [Database queries](database.md#queries) before passing user input.
 
 ## Versioning
 Your **model** must be defined with `use Versioning` in its definition.
@@ -258,11 +277,15 @@ use Divergence\Models\Versioning;
 class Tag extends Model
 {
     use Versioning;
+    use \Divergence\Models\Relations;
+
+    public static $tableName = 'tags';
+    public static $historyTable = 'tags_history';
 }
 ```
 
 #### Configurables
-You **must** provide these settings to use versioning.
+You **must** provide a history table name. The revision flags control whether saves and deletes create history entries:
 
 ```php
 public static $historyTable = 'test_history';
@@ -279,6 +302,8 @@ If you did not create your tables yet, a versioned model can have its history ta
 #[Column(type: "integer", unsigned:true, notnull:false)]
 private $RevisionID;
 ```
+
+The current trait declares this as a nullable integer property. `RevisionID` is managed by versioning; don't assign it yourself. Versioned saves can also update `Created`, so don't treat that field as an immutable first-created timestamp on a versioned model.
 
 #### Trait `\Divergence\Models\Versioning` provides these methods.
 | Method | Purpose |
@@ -304,6 +329,8 @@ private $RevisionID;
 $Model = Tag::getByID(1);
 $Model->History; // array of revisions where ID == 1 ordered by RevisionID
 ```
+
+The `History` property requires `Relations` as well as `Versioning`. `getRevisionsByID($id, $options)` can be called without the relationship property. As with other bulk hydration, an indexed model may return a record collection rather than an array.
 
 ## Relationships
 Your model **must** be defined with `use Relations` in its definition.
@@ -340,11 +367,13 @@ Otherwise you can define it with attributes like so:
 #[Relation(
     type:'one-one',
     class:Tag::class,
-    local: 'ThreadID',
+    local: 'TagID',
     foreign: 'ID',
 )]
 protected $Tag;
 ```
+
+Import `Divergence\Models\Mapping\Relation` for these attribute examples. `User`, `Thread`, `Post`, and `PostTags` below are application models you supply, not built-in framework classes.
 
 #### Keep in Mind
 - Relationships should not have the same name.
@@ -419,10 +448,22 @@ Use `context-parent` when a record stores a polymorphic parent reference through
 ```php
 #[Relation(
     type:'context-parent',
-    local: 'ContextID',
-    classField: 'ContextClass'
+    local: 'ContextID'
 )]
 protected $Context;
+```
+
+The class field defaults to `ContextClass`. Define both `ContextClass` and `ContextID` as fields on the model. Use array mapping for extra relationship options such as a custom `classField` or `allowedClasses`:
+
+```php
+public static $relationships = [
+    'Context' => [
+        'type' => 'context-parent',
+        'classField' => 'ContextClass',
+        'local' => 'ContextID',
+        'allowedClasses' => [Post::class],
+    ],
+];
 ```
 
 ### `context-children`
@@ -432,11 +473,12 @@ Use `context-children` for the inverse of `context-parent`.
 #[Relation(
     type:'context-children',
     class:Media::class,
-    local: 'ID',
-    contextClass: Post::class
+    local: 'ID'
 )]
 protected $Media;
 ```
+
+`contextClass` defaults to the current model class. Override it through array mapping if the stored class should be different. Relationship results are loaded lazily and cached on the object; they are not live queries that rerun on every property read.
 
 ### `history`
 Use `history` with versioned models to expose prior revisions.
@@ -454,7 +496,7 @@ Use `history` with versioned models to expose prior revisions.
 #[Relation(
     type:'one-one',
     class:Tag::class,
-    local: 'ThreadID',
+    local: 'TagID',
     foreign: 'ID',
 )]
 protected $Tag;
@@ -503,7 +545,7 @@ protected $RecentThreads;
 | `string` | Short text |
 | `clob` | Long text |
 | `float` | Approximate decimal values |
-| `decimal` | Exact fixed-point values |
+| `decimal` | SQL decimal storage, mapped to PHP floats |
 | `enum` | Controlled one-of-many values |
 | `boolean` | True/false flags |
 | `password` | Hashed secret material |
@@ -524,7 +566,7 @@ Whole-number numeric field.
 Also a whole-number field. In practice `int` and `integer` are the same family here.
 
 ### `uint`
-Unsigned integer. Should never be negative.
+An unsigned integer schema type. Validate your input; don't rely on every backend enforcing unsigned ranges identically.
 
 ### `string`
 Short text, usually the right fit for names, titles, slugs, and handles.
@@ -536,7 +578,7 @@ Long-form text for bodies, descriptions, and content.
 Approximate decimal values. Fine for measurements where small rounding drift is acceptable.
 
 ### `decimal`
-Exact fixed-point decimal values. Use for money or values where precision matters.
+`precision` and `scale` describe the SQL column. The default PHP getter and setter use floats, so this is not exact decimal arithmetic in application code. Use integer minor units for exact receipt totals within integer range; see [Math](math.md#accounting-with-integer-cents).
 
 ### `enum`
 Restricts a field to one of a predefined set of values.
@@ -545,16 +587,16 @@ Restricts a field to one of a predefined set of values.
 True/false flag field.
 
 ### `password`
-Intended for hashed secrets rather than plaintext input.
+Intended for stored hashes. It does not call `password_hash()` for you, and it is not automatically excluded from `getData()`. See [Security](security.md#user-model).
 
 ### `timestamp`
-Time values with time-of-day precision.
+Accepts Unix timestamps or date/time strings. The default setter stores a `Y-m-d H:i:s` value, and the getter returns a Unix timestamp or `null`. Configure your application and database timezones deliberately.
 
 ### `date`
 Calendar dates without time-of-day precision.
 
 ### `serialized`
-Stores structured PHP data serialized into text.
+Stores structured PHP data serialized into text and unserializes it on read. Use it only for trusted stored data; it is not a format for accepting arbitrary serialized input from clients.
 
 ### `set`
 Stores multiple values from a controlled list.
@@ -593,10 +635,10 @@ class Canary extends \Divergence\Models\Model
     #[Column(type: 'clob', notnull:true)]
     protected $DNA;
 
-    #[Column(type: 'string', required: true, notnull:true)]
+    #[Column(type: 'string', notnull:true)]
     protected $Name;
 
-    #[Column(type: 'string', blankisnull: true, notnull:false)]
+    #[Column(type: 'string', notnull:false)]
     protected $Handle;
 
     #[Column(type: 'boolean', default: true)]
@@ -634,6 +676,9 @@ class Canary extends \Divergence\Models\Model
 
     #[Column(type: 'decimal', notnull: false, precision: 5, scale: 2)]
     protected $Weight;
+
+    #[Column(type: 'binary', length: 16, notnull: false)]
+    protected $LastIP;
 }
 ```
 
@@ -721,7 +766,7 @@ Custom validation:
     'field' => 'Email',
     'required' => true,
     'validator' => [
-        Validate::class,
+        \Divergence\Helpers\Validate::class,
         'email',
     ],
 ]
@@ -736,28 +781,18 @@ Both `$beforeSave` and `$afterSave` get passed an instance of the object being s
 
 Events are not overridden by child classes. An event will fire for every parent of a child class.
 
-#### The two relevant snippets from ActiveRecord's event-definition path.
+Set a callable before the model's event definitions are initialized. For example, inside the Tag model:
+
 ```php
-if (is_callable($class::$beforeSave)) {
-    if (!empty($class::$beforeSave)) {
-        if (!in_array($class::$beforeSave, static::$_classBeforeSave)) {
-            static::$_classBeforeSave[] = $class::$beforeSave;
-        }
-    }
+public static $beforeSave = [self::class, 'normalizeTag'];
+
+public static function normalizeTag(Tag $Tag): void
+{
+    $Tag->setValue('Tag', trim($Tag->getValue('Tag')));
 }
 ```
 
-```php
-if (is_callable($class::$afterSave)) {
-    if (!empty($class::$afterSave)) {
-        if (!in_array($class::$afterSave, static::$_classAfterSave)) {
-            static::$_classAfterSave[] = $class::$afterSave;
-        }
-    }
-}
-```
-
-Also note that the current save flow routes through handler classes:
+The save flow routes through handler classes:
 
 - `beforeSaveHandler`
 - `afterSaveHandler`
@@ -765,7 +800,7 @@ Also note that the current save flow routes through handler classes:
 - `destroyHandler`
 - `deleteHandler`
 
-So the framework's event and persistence lifecycle is more modular than older docs implied, even though the conceptual hooks are the same.
+`beforeSave` runs before validation and persistence. `afterSave` runs after the model's save work, but it does not mean an enclosing database transaction has committed. Keep that distinction in mind before sending notifications from a hook.
 
 ## Advanced Techniques
 Here are a few examples of how to use ActiveRecord but still do custom things with your model.
@@ -780,9 +815,6 @@ public function getValue($field)
         case 'HeightCM':
             return static::inchesToCM($this->Height);
 
-        case 'calculateTax':
-            return $this->calculateTaxTotal();
-
         default:
             return parent::getValue($field);
     }
@@ -793,35 +825,28 @@ public static function inchesToCM($value)
     return $value * 2.54;
 }
 
-public function calculateTaxTotal()
-{
-    $taxTotal = 0;
-    if ($state = $this->getStateTaxRate()) {
-        $taxTotal += ($state * $this->Price);
-    }
-    if ($local = $this->getLocalTaxRate()) {
-        $taxTotal += ($local * $this->Price);
-    }
-    return $taxTotal;
-}
 ```
+
+`$Model->HeightCM` now exposes a calculated value without adding a database column. `getData()` enumerates mapped fields, so a dynamic getter is not automatically included in JSON output. For a complete financial calculation example, see [Accounting With Integer Cents](math.md#accounting-with-integer-cents).
 
 ### Get Models By Custom Join
 In this example we let the table names come right from the class. We also make sure our query only gives us the one model we actually want to instantiate from the data.
 
+`App`, `BlogPost`, `PostTags`, and `Tag` are application classes in these snippets. `isLoggedIn()` is the application's helper from the security example, not a built-in App method. The query assumes integer tag IDs. A real publishing policy may need ownership or role checks before exposing drafts.
+
 #### Standalone Example
 
 ```php
-if (App::$App->is_loggedin()) {
-    $where = "`Status` IN ('Draft','Published')";
+if (App::$App->isLoggedIn()) {
+    $where = "`bp`.`Status` IN ('Draft','Published')";
 } else {
-    $where = "`Status` IN ('Published')";
+    $where = "`bp`.`Status` IN ('Published')";
 }
 
 $BlogPosts = BlogPost::getAllByQuery(
     "SELECT `bp`.* FROM `%s` `bp`
-    INNER JOIN %s as `t` ON `t`.`BlogPostID`=`bp`.`ID`
-    WHERE `t`.`TagID`='%s' AND $where",
+    INNER JOIN `%s` as `t` ON `t`.`BlogPostID`=`bp`.`ID`
+    WHERE `t`.`TagID`=%u AND $where",
     [
         BlogPost::$tableName,
         PostTags::$tableName,
@@ -845,16 +870,16 @@ public function getValue($field)
 public static function getAllByTag($slug)
 {
     if ($Tag = Tag::getByField('Slug', $slug)) {
-        if (App::$App->is_loggedin()) {
-            $where = "`Status` IN ('Draft','Published')";
+        if (App::$App->isLoggedIn()) {
+            $where = "`bp`.`Status` IN ('Draft','Published')";
         } else {
-            $where = "`Status` IN ('Published')";
+            $where = "`bp`.`Status` IN ('Published')";
         }
 
         return static::getAllByQuery(
             "SELECT `bp`.* FROM `%s` `bp`
-            INNER JOIN %s as `t` ON `t`.`BlogPostID`=`bp`.`ID`
-            WHERE `t`.`TagID`='%s' AND $where",
+            INNER JOIN `%s` as `t` ON `t`.`BlogPostID`=`bp`.`ID`
+            WHERE `t`.`TagID`=%u AND $where",
             [
                 static::$tableName,
                 PostTags::$tableName,

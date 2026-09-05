@@ -3,9 +3,14 @@
 [![Latest Stable Version](https://poser.pugx.org/divergence/divergence/v/stable)](https://packagist.org/packages/divergence/divergence)
 [![License](https://poser.pugx.org/divergence/divergence/license)](https://packagist.org/packages/divergence/divergence)
 
-These docs are written against the current `../framework` worktree. The framework still has the same overall shape as the older docs, but several internals have moved since the earlier documentation was written: controller actions are split into endpoint classes, the model getter layer now routes through `Factory`, and MySQL/PostgreSQL/SQLite support is a real first-class runtime concern.
+These are the docs for Divergence 3.3.0. Start with a model, give it a controller, and build your application from there. The framework includes an ActiveRecord ORM, MySQL/PostgreSQL/SQLite support, indexed collections, statistics, Twig responses, and media handling.
+
+If this is your first project, start with [Getting Started](gettingstarted.md). If you're here for the data layer, read [ORM](orm.md), [Collections](collections.md), and [Math](math.md). You can use collections and Math without a database.
+
+The 3.3 source requires PHP 8.4 or newer. These pages describe the implementation, including places where you need to supply application policy or configuration. They do not assume the starter files are a finished website.
 
 ## Table of Contents
+
 - ### [Getting Started](/gettingstarted.md)
     - [Server Prerequisites](/gettingstarted.md#server-prerequisites)
     - [Bootstrap a New Project](/gettingstarted.md#bootstrap-a-new-project)
@@ -21,6 +26,7 @@ These docs are written against the current `../framework` worktree. The framewor
     - [Path Stack Routing](/architecture.md#path-stack-routing)
     - [Response Builders](/architecture.md#response-builders)
     - [Endpoint Based Controllers](/architecture.md#endpoint-based-controllers)
+    - [Data Layer](/architecture.md#data-layer)
 
 - ### [Command Line Tool](/cli.md)
     - [Installation](/cli.md#installation)
@@ -35,6 +41,7 @@ These docs are written against the current `../framework` worktree. The framewor
     - [Web Setup](/agentic-mvp-guide.md#web-setup)
     - [SQLite MVP Setup](/agentic-mvp-guide.md#sqlite-mvp-setup)
     - [MySQL MVP Setup](/agentic-mvp-guide.md#mysql-mvp-setup)
+    - [PostgreSQL MVP Setup](/agentic-mvp-guide.md#postgresql-mvp-setup)
     - [CLI Setup](/agentic-mvp-guide.md#cli-setup)
     - [Minimum JSON-To-DB Example](/agentic-mvp-guide.md#minimum-json-to-db-example)
 
@@ -46,6 +53,13 @@ These docs are written against the current `../framework` worktree. The framewor
     - [Development & Production](/projectstructure.md#development--production)
     - [Database Labels](/projectstructure.md#database-labels)
     - [Error Handling](/projectstructure.md#error-handling)
+
+- ### [Database](/database.md)
+    - [Connection Configurations](/database.md#connection-configurations)
+    - [Choosing the Connection](/database.md#choosing-the-connection)
+    - [Queries](/database.md#queries)
+    - [Transactions](/database.md#transactions)
+    - [Schema Creation and Portability](/database.md#schema-creation-and-portability)
 
 - ### [ORM](/orm.md#orm)
     - [Model Architecture](/orm.md#model-architecture)
@@ -61,6 +75,22 @@ These docs are written against the current `../framework` worktree. The framewor
     - [Validation](/orm.md#validation)
     - [Event Binding](/orm.md#event-binding)
     - [Advanced Techniques](/orm.md#advanced-techniques)
+
+- ### [Collections](/collections.md)
+    - [Making a Collection](/collections.md#making-a-collection)
+    - [Indexing and Finding](/collections.md#indexing-and-finding)
+    - [Adding, Removing, and Changing Records](/collections.md#adding-removing-and-changing-records)
+    - [ORM Collections](/collections.md#orm-collections)
+
+- ### [Math](/math.md)
+    - [Method Reference](/math.md#method-reference)
+    - [Percentiles Aren't Always Medians](/math.md#percentiles-arent-always-medians)
+    - [Variance, Standard Deviation, and Relationships](/math.md#variance-standard-deviation-and-relationships)
+    - [Histograms](/math.md#histograms)
+    - [Frequency and Mode](/math.md#frequency-and-mode)
+    - [Rankings and Outliers](/math.md#rankings-and-outliers)
+    - [Moving Averages and Rolling Windows](/math.md#moving-averages-and-rolling-windows)
+    - [Accounting With Integer Cents](/math.md#accounting-with-integer-cents)
 
 - ### [Controllers](/controllers.md#controllers)
     - [Intro to Tree Routing](/controllers.md#intro-to-tree-routing)
@@ -80,6 +110,13 @@ These docs are written against the current `../framework` worktree. The framewor
             - [Delete Multiple Records](/controllers.md#delete-multiple-records)
         - [MediaRequestHandler](/controllers.md#mediarequesthandler)
 
+- ### [Media](/media.md)
+    - [Server Setup](/media.md#server-setup)
+    - [Creating Media](/media.md#creating-media)
+    - [HTTP Routes](/media.md#http-routes)
+    - [Thumbnails and Variants](/media.md#thumbnails-and-variants)
+    - [Streaming](/media.md#streaming)
+
 - ### [Views](/views.md)
     - [Responding with a Template](/views.md#responding-with-a-template)
     - [Template Lookup Rules](/views.md#template-lookup-rules)
@@ -96,6 +133,7 @@ These docs are written against the current `../framework` worktree. The framewor
     - [Get the Source Code](/developing.md#get-the-source-code)
     - [Unit Testing](/developing.md#unit-testing)
     - [How Mock Data is Made](/developing.md#how-mock-data-is-made)
+    - [Static Analysis](/developing.md#static-analysis)
     - [Style Guide](/developing.md#style-guide)
 
 - ### [Addendum](/addendum.md)

@@ -12,7 +12,7 @@ Finally the response object is passed to an **Emitter**. The emitter does the ac
 
 Generally all responses are created by controllers. Divergence comes with several built in controller classes to save you time, but they still return normal PSR-7 responses.
 
-Using this architecture, most code written for Divergence is portable in the PSR-7 sense even though the framework's routing and ORM are custom.
+The request and response interfaces are PSR-compatible. The built-in handlers still use PHP superglobals and `App::$App`, though. Passing in a different request object does not replace all that global state. Keep that in mind when writing tests or embedding the framework in a long-running server.
 
 ## Boot Flow
 
@@ -39,7 +39,7 @@ $app->handleRequest();
 Inside `Divergence\App`:
 
 - `ApplicationPath` is stored
-- `Routing\Path` is initialized from `$_SERVER['REQUEST_URI']`
+- `Routing\Path` is initialized from `$_SERVER['REQUEST_URI']` for web requests; ordinary CLI startup skips it
 - `config/app.php` is loaded
 - the error handler is registered
 
@@ -54,7 +54,7 @@ public function handleRequest()
 }
 ```
 
-Real applications usually override that method so that they dispatch into their own root controller instead of the placeholder `SiteRequestHandler`.
+Override that method to dispatch into your own root controller. The bundled `SiteRequestHandler` calls `phpinfo()` and exits; it is a placeholder, not a production route. See [Getting Started](gettingstarted.md#take-over-control-from-the-framework) for the complete setup.
 
 ## Path Stack Routing
 
@@ -79,7 +79,7 @@ That means each controller can take over a branch of the URL tree, then hand off
 
 Controllers normally choose their response format through `$this->responseBuilder`.
 
-Current built in builders are:
+Built in builders are:
 
 - `TwigBuilder`
 - `JsonBuilder`
@@ -105,10 +105,31 @@ return $this->respond('ignored-in-json-mode', ['success' => true, 'data' => $Pos
 
 ## Endpoint Based Controllers
 
-One important current-state change is internal, not conceptual:
+Endpoint classes keep individual actions out of the main handler:
 
-- `RequestHandler` now supports endpoint registration
+- `RequestHandler` supports endpoint registration
 - endpoint objects are lazily instantiated through `__call()`
 - `RecordsRequestHandler` and `MediaRequestHandler` dispatch most action handling into focused endpoint classes
 
-That means the framework still feels like the same CRUD/media controller system externally, but the handler internals are now more modular than older docs described.
+The public handler methods still dispatch those actions. Override the relevant handler hooks or register an endpoint when you need application-specific behavior; you don't need to copy the entire CRUD controller.
+
+## Data Layer
+
+The model API stays small, but the work is split up:
+
+| Component | Responsibility |
+| --- | --- |
+| `Models\ActiveRecord` and `Models\Model` | Fields, state, validation, and the public persistence API |
+| `Models\Factory` | Model getter dispatch and coordination |
+| `Models\Factory\ModelMetadata` | Cached model and field definitions |
+| `Models\Factory\Instantiator` and `EventBinder` | Hydrate records and initialize model state |
+| `IO\Database\Connections` | Resolve the selected PDO connection and storage backend |
+| Database query and writer classes | Build backend-specific SQL |
+| `Data\Collections` | In-memory storage, indexes, queries, and Math |
+| `Models\Collections\RecordCollection` | Collection behavior tied to model events and persistence |
+
+These are different layers. `Tag::getAllByWhere()` queries the database. `$tags->getAllByCriteria()` queries the records already loaded into a collection. `$tags->sum()` does arithmetic in PHP; it does not issue `SELECT SUM(...)`.
+
+Model definitions, reflection information, getter instances, and connections have process-local caches. That helps ordinary PHP request execution, but it is not a distributed cache or a promise that global state is isolated between requests in a persistent worker.
+
+The [ORM](orm.md), [Database](database.md), [Collections](collections.md), and [Math](math.md) chapters cover each part in detail.

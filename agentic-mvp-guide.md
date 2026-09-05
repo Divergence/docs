@@ -8,10 +8,12 @@ The goal is to get a minimal MVP running with:
 
 - a web entrypoint
 - a CLI entrypoint
-- either SQLite or MySQL
+- SQLite, MySQL, or PostgreSQL
 - a minimal example of writing JSON into the database
 
 ## Rules For The Agent
+
+Use PHP 8.4 or newer for the 3.3 source. Read the existing application before changing it. Follow the user's chosen backend and conventions; this guide is not permission to replace them.
 
 When setting up a CLI program in this codebase:
 
@@ -23,8 +25,10 @@ When setting up a CLI program in this codebase:
 
 When choosing a database:
 
-- use SQLite for the fastest MVP and lowest setup friction
+- use the backend the user requested or the application already uses
+- use SQLite for a small local MVP when there isn't an existing backend requirement
 - use MySQL when the app is expected to match a production MySQL deployment
+- use PostgreSQL when that is the target deployment
 
 When building the minimum viable app:
 
@@ -33,6 +37,8 @@ When building the minimum viable app:
 - route web requests through your own root controller
 - keep CLI code out of controllers
 - let CLI scripts bootstrap the app and then run one task
+- do not rewrite framework internals to make a demo work
+- use existing tests when the project has them; ask before adding test infrastructure to a project with none
 
 ## Minimum Structure
 
@@ -84,7 +90,7 @@ class App extends \Divergence\App
 
 ## SQLite MVP Setup
 
-For the fastest path, set SQLite in `config/db.php`:
+For a local SQLite app, add this entry to the array returned by `config/db.php`:
 
 ```php
 'sqlite' => [
@@ -105,6 +111,8 @@ Use SQLite when:
 - you want zero external DB setup
 - you need a local prototype quickly
 - one-file persistence is enough
+
+Create `var/sqlite/` first and make it writable by the application. Keep it outside `public/`.
 
 ## MySQL MVP Setup
 
@@ -131,9 +139,34 @@ Use MySQL when:
 - you need to match MySQL behavior from day one
 - deployment assumptions already include a server DB
 
+## PostgreSQL MVP Setup
+
+Add a PostgreSQL label to the returned configuration:
+
+```php
+'pgsql' => [
+    'driver' => 'pgsql',
+    'host' => '127.0.0.1',
+    'port' => 5432,
+    'database' => 'app',
+    'username' => 'app',
+    'password' => 'replace-me',
+],
+```
+
+Then activate it after the App has been initialized, before querying models:
+
+```php
+\Divergence\IO\Database\Connections::setConnection('pgsql');
+```
+
+Enable `pdo_pgsql`, create the database and role, and use the same label in your web and CLI paths. See [Database](database.md) for full configurations and backend boundaries.
+
 ## CLI Setup
 
 Put your script in `./bin/`.
+
+The examples below select SQLite. Change that label to the project's chosen connection; don't create a second database just because a copied example uses it. Do not load `bootstrap/router.php` from a task script, because that handles a web request.
 
 Use a real executable file:
 
@@ -246,7 +279,7 @@ If asked to set up a minimal MVP, the agent should do this in order:
 
 1. Create `src/App.php` if the app does not already override `Divergence\App`.
 2. Create a root controller under `src/Controllers/Main.php`.
-3. Choose `sqlite` unless the user explicitly wants MySQL parity.
+3. Use the requested or existing database; choose SQLite only when there is no backend requirement.
 4. Add or verify the DB label in `config/db.php`.
 5. Create models with the smallest possible schema.
 6. Add executable scripts to `./bin/` with `#!/usr/bin/env php`.
@@ -262,4 +295,6 @@ For an MVP, the setup is good enough when:
 - JSON from stdin is accepted
 - one record is written successfully
 - the same app still boots on the web side
-- the DB backend can be switched by changing the connection label
+- the configured backend works through both entrypoints
+
+The `Note` example is a local import demo, not an authenticated public API. Validate external data and enforce permissions before exposing writes over HTTP. Do not use the framework's placeholder `SiteRequestHandler` as the public entrypoint; the [getting-started guide](gettingstarted.md#take-over-control-from-the-framework) includes the root controller and Twig view.

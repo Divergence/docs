@@ -6,178 +6,102 @@
 
 ```bash
 git clone https://github.com/Divergence/framework.git divergence/framework
-git clone https://github.com/Divergence/cli.git divergence/cli
+cd divergence/framework
+composer install
 ```
 
-### Make sure you run
-`composer install`
+Use PHP 8.4 or newer and install the PDO drivers for the backends you plan to test. The CLI lives in the separate `Divergence/cli` repository; you don't need it to run framework tests.
 
-Unit tests use named labels from `config/db.php`.
+## Unit Testing
 
 #### |> THE TABLES WILL BE DELETED AFTER EACH TEST CYCLE!!!! <|
 
-Representative labels:
+Use disposable databases. The mock app also drops existing test tables during setup. Do not point a test label at application data.
+
+Tests use labels returned by `config/db.php`. A local `config/db.dev.php` replaces that configuration when present. These are example entries, not credentials you should deploy:
 
 ```php
-'tests-mysql' => [
-    'host'     => 'localhost',
-    'database' => 'test',
-    'username' => 'root',
-    'password' => '',
-]
-
-'tests-pgsql' => [
-    'driver'   => 'pgsql',
-    'host'     => '127.0.0.1',
-    'port'     => 5432,
-    'database' => 'test',
-    'username' => 'divergence',
-    'password' => 'abc123',
-]
-
-'tests-sqlite-memory' => [
-    'path' => ':memory:',
-]
+<?php
+return [
+    'tests-mysql' => [
+        'host' => '127.0.0.1',
+        'database' => 'divergence_test',
+        'username' => 'divergence_test',
+        'password' => 'replace-me',
+    ],
+    'tests-pgsql' => [
+        'driver' => 'pgsql',
+        'host' => '127.0.0.1',
+        'port' => 5432,
+        'database' => 'divergence_test',
+        'username' => 'divergence_test',
+        'password' => 'replace-me',
+    ],
+    'tests-sqlite-memory' => [
+        'path' => ':memory:',
+    ],
+];
 ```
 
-## Unit Testing
-The framework currently exposes Composer scripts for the common test paths:
+Run one backend or the whole matrix:
 
 ```bash
-composer test
-composer test:mysql
-composer test:sqlite
 composer test:pgsql
+composer test:sqlite
+composer test:mysql
+composer test
+```
+
+`composer test` runs MySQL, SQLite, then PostgreSQL. Each backend script sets `DIVERGENCE_TEST_DB` and invokes PHPUnit. To narrow a run, pass that label explicitly:
+
+```bash
+DIVERGENCE_TEST_DB=tests-pgsql vendor/bin/phpunit --filter CollectionMath
+```
+
+Don't assume an unqualified `vendor/bin/phpunit` selects the backend you wanted. Without the environment variable, the bootstrap doesn't initialize the selected database fixture environment.
+
+### Coverage
+
+Ordinary test runs don't generate coverage reports. Request coverage explicitly when you need it:
+
+```bash
 composer test:coverage
 ```
 
-What they do today:
-
-- `composer test` runs MySQL, SQLite, and PostgreSQL suites in sequence
-- each suite sets `DIVERGENCE_TEST_DB`
-- coverage mode generates per-backend coverage blobs and merges them with `phpcov`
-
-You can also still run PHPUnit directly. For example:
-
-```bash
-vendor/bin/phpunit
-```
-
-or:
-
-```bash
-XDEBUG_MODE=coverage DIVERGENCE_TEST_DB=tests-mysql vendor/bin/phpunit --coverage-php build/coverage/mysql.cov
-```
-
-Representative current output from `composer test`:
-
-```text
-Summoning Canaries
-Starting Divergence Mock Environment for PHPUnit (tests-mysql)
-PHPUnit 13.0.5 by Sebastian Bergmann and contributors.
-
-Runtime:       PHP 8.5.3
-Configuration: /home/akujin/Divergence/framework/phpunit.xml
-
-...............................................................  63 / 224 ( 28%)
-............................................................... 126 / 224 ( 56%)
-............................................................... 189 / 224 ( 84%)
-...................................                             224 / 224 (100%)
-
-Time: 00:00.483, Memory: 30.00 MB
-
-OK (224 tests, 2767 assertions)
-
-Cleaning up Divergence Mock Environment for PHPUnit (tests-mysql)
-Summoning Canaries
-Starting Divergence Mock Environment for PHPUnit (tests-sqlite-memory)
-PHPUnit 13.0.5 by Sebastian Bergmann and contributors.
-
-Runtime:       PHP 8.5.3
-Configuration: /home/akujin/Divergence/framework/phpunit.xml
-
-...............................................................  63 / 224 ( 28%)
-............................................................... 126 / 224 ( 56%)
-............................................................... 189 / 224 ( 84%)
-...................................                             224 / 224 (100%)
-
-Time: 00:00.406, Memory: 30.00 MB
-
-OK (224 tests, 2744 assertions)
-
-Cleaning up Divergence Mock Environment for PHPUnit (tests-sqlite-memory)
-Summoning Canaries
-Starting Divergence Mock Environment for PHPUnit (tests-pgsql)
-PHPUnit 13.0.5 by Sebastian Bergmann and contributors.
-
-Runtime:       PHP 8.5.3
-Configuration: /home/akujin/Divergence/framework/phpunit.xml
-
-...............................................................  63 / 224 ( 28%)
-............................................................... 126 / 224 ( 56%)
-............................................................... 189 / 224 ( 84%)
-...................................                             224 / 224 (100%)
-
-Time: 00:00.669, Memory: 30.00 MB
-
-OK (224 tests, 2763 assertions)
-
-Cleaning up Divergence Mock Environment for PHPUnit (tests-pgsql)
-```
+That runs all three backends in coverage mode, writes `build/coverage/mysql.cov`, `sqlite.cov`, and `pgsql.cov`, and merges them into `build/logs/clover.xml` with `phpcov`. It requires a working coverage driver; the scripts enable Xdebug's coverage mode. There are also `test:mysql:coverage`, `test:sqlite:coverage`, and `test:pgsql:coverage` scripts for individual backends.
 
 ### How Mock Data is Made
 
-The current test environment is bootstrapped through:
+`tests/bootstrap.php` loads Composer, reads `DIVERGENCE_TEST_DB`, initializes `tests/MockSite/App.php`, selects the connection, and calls the mock app's `setUp()`. A shutdown handler calls `tearDown()`.
 
-- `tests/bootstrap.php`
-- `tests/Divergence/TestListener.php`
-- `tests/MockSite/App.php`
+The mock app builds tags, canaries, and relational forum data. Individual tests also build their own fixtures. The accounting tests use a deterministic 200-receipt ledger, so expected totals and distributions are repeatable instead of depending on random prices.
 
-`TestListener` sets up the mock environment per suite:
+The bootstrap starts a fresh `tests/test-errors.log` for each run and appends captured errors and exceptions. Test setup and teardown have filesystem and database effects even when coverage is disabled.
 
-```php
-public function startTestSuite(TestSuite $suite): void
-{
-    if ($connectionLabel = $this->getConnectionLabel($suite)) {
-        $_SERVER['REQUEST_URI'] = '/';
-        $suite->app = new App(__DIR__.'/../../');
-        $suite->connectionLabel = $connectionLabel;
-        Connections::setConnection($suite->connectionLabel);
-        $suite->app->setUp();
-    }
-}
+The mock app and tests are useful examples of field mapping, versioning, relationships, controllers, media, collection rollback, and Math behavior. Read the test for the feature you're changing and run it as you work.
+
+## Static Analysis
+
+```bash
+composer analyze
 ```
 
-The `App` referenced above is `tests/MockSite/App`.
+This runs Phan with `--allow-polyfill-parser --no-progress-bar` and the project's `.phan/config.php`. The Phan GitHub Action runs on pushes and pull requests across all branches. Requiring the `Phan` check before merging into `develop` is a repository branch-protection setting, not something the workflow file enforces by itself.
 
-The `setUp` method in that class contains the database setup code.
-
-The mock data is generated at random and from the tests themselves, then cleared on every PHPUnit run.
-
-`tests/MockSite/App.php` currently:
-
-- drops existing test tables for the active backend
-- seeds tags
-- creates canaries
-- creates relational forum-style mock data
-- removes generated media on teardown
-
-The mock app under `tests/MockSite` is one of the clearest executable examples of intended framework usage.
+Keep annotations accurate. Use real type hints where the runtime contract permits them. When a namespace is only needed in a DocBlock, write the full namespace there; don't add a `use` just for a comment. An annotation should explain the code, not hide a bug.
 
 ## Style Guide
-The formatter is wired through Composer:
+
+Preview the formatter first:
+
+```bash
+vendor/bin/php-cs-fixer fix --dry-run --diff
+```
+
+To apply the configured rules:
 
 ```bash
 composer fix-code
 ```
 
-The framework currently ships `friendsofphp/php-cs-fixer` in `require-dev`.
-
-If you contribute to the framework, keep test coverage in mind. The project clearly treats the test suite as behavioral documentation, especially around:
-
-- ORM field mapping and persistence behavior
-- versioning
-- relations
-- request handlers
-- media streaming and range semantics
-- DB helper behavior across multiple backends
+Use the repository's `.php-cs-fixer.dist.php`, including its custom copyright-header handling and annotation overrides. Don't substitute a generic ruleset. Review the resulting edits: formatting is not permission to change behavior, visibility, or annotations just to make a tool quiet.

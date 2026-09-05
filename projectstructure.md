@@ -15,7 +15,7 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*) index.php [L,QSA]
 ```
 
-This will route all paths to the one other file in a public directory by default: `index.php`.
+This routes requests that don't match an existing file or directory to `index.php`. Keep application code, config, and runtime data outside the public directory.
 
 `index.php` requires these files in order:
 
@@ -42,6 +42,7 @@ This will route all paths to the one other file in a public directory by default
 | Folder | Description |
 | --- | --- |
 | `bootstrap` | Bootstrap files described above |
+| `bin` | Your executable application commands, if you have any |
 | `config` | Config files |
 | `public` | Static files and web root |
 | `src` | Default location for your project's PHP code |
@@ -97,14 +98,16 @@ public static $defaultProductionLabel = 'mysql';
 public static $defaultDevLabel = 'dev-mysql';
 ```
 
-The framework now also ships PostgreSQL and SQLite labels in `config/db.php`, and the concrete storage backend is inferred from the chosen label.
+The framework also ships PostgreSQL and SQLite labels in `config/db.php`. The backend is selected from the configuration stored under the label, not from the label's name.
 
 #### The existence of the `.dev` file effectively switches your default database connection label.
 #### Tip: You can override these default labels for things like unit tests and continuous integration before any database connections are established.
 
 This behavior is part of the `Divergence\App` and `Divergence\IO\Database\Connections` runtime.
 
-#### This is the first method that runs after Composer.
+#### App Initialization
+
+The App constructor sets `App::$App` and calls `init()`. The default initializer does this:
 ```php
 public function init($Path)
 {
@@ -144,13 +147,15 @@ A simple way to switch environments is provided for you, but you're welcome to p
 You can also explicitly force a connection label before the first query:
 
 ```php
-\Divergence\IO\Database\Connections::setConnection('tests-pgsql');
+\Divergence\IO\Database\Connections::setConnection('pgsql');
 ```
+
+See [Database](database.md) for full configurations, query helpers, and transactions. Keep `tests-*` labels pointed at disposable databases.
 
 ## Error Handling
 Development mode turns on Whoops error handling.
 
-Production mode sets `error_reporting(0)` so that a user does not ever see raw PHP errors.
+Production mode sets `error_reporting(0)`. That is the framework's default behavior, not a logging system or a guarantee that every failure has a useful response.
 
 It is recommended that you bind your own logging and production exception reporting around this.
 

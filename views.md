@@ -6,7 +6,7 @@ Divergence uses the [Twig Template Engine](https://twig.symfony.com/) as its pri
 #### Architecture
 A typical Divergence project will have a `views` folder containing all the Twig templates.
 
-The current `TwigBuilder`:
+`TwigBuilder`:
 
 - loads templates from `App::$App->ApplicationPath.'/views'`
 - uses `Twig\Environment`
@@ -17,29 +17,27 @@ The current `TwigBuilder`:
 To generate a response using a Twig template:
 
 ```php
+use Divergence\Responders\Response;
+use Divergence\Responders\TwigBuilder;
+
 return new Response(new TwigBuilder('blog/posts.twig', [
     'BlogPosts' => $BlogPosts,
-    'isLoggedIn' => App::$App->is_loggedin(),
-    'Sidebar' => $this->getSidebarData(),
-    'Limit' => static::LIMIT,
-    'Total' => DB::foundRows(),
 ]));
 ```
 
-If you are already inside a `RequestHandler`, the more common current style is:
+If you are already inside a `RequestHandler`, use its response helper:
 
 ```php
 $this->responseBuilder = \Divergence\Responders\TwigBuilder::class;
 
 return $this->respond('blog/posts.twig', [
     'BlogPosts' => $BlogPosts,
-    'Sidebar' => $this->getSidebarData(),
 ]);
 ```
 
 ### Injecting Data - Hello World
 ```php
-new Response(new TwigBuilder('helloworld.twig', [
+return new Response(new TwigBuilder('helloworld.twig', [
     'text' => 'Hello World'
 ]));
 ```
@@ -59,3 +57,21 @@ Templates are resolved relative to your app's `views/` directory, so:
 - `blog/posts.twig` maps to `views/blog/posts.twig`
 
 Also note that `RecordsRequestHandler` still uses model nouns to derive HTML template names when you are not in JSON mode, so `$singularNoun` and `$pluralNoun` still matter even in current Divergence.
+
+The records controller uses response IDs such as `tags`, `tagEdit`, and `tagSaved` for a model with nouns `tag` and `tags`. Those are literal template names; the builder does not append `.twig` for you. Either provide templates with those names or customize the handler's naming.
+
+## Template Data
+
+Pass the values the template actually uses. With `strict_variables` enabled, a missing value can throw instead of silently becoming an empty string. Use Twig's `is defined` or `default` only when absence is part of the intended input.
+
+```twig
+{% for post in BlogPosts %}
+    <h2>{{ post.Title }}</h2>
+{% else %}
+    <p>No posts yet.</p>
+{% endfor %}
+```
+
+Twig's normal HTML escaping applies. Don't use `raw` for user-supplied text just to make formatting work. `StringLoaderExtension` is available, but rendering user input as a Twig template is a different operation from displaying it as data.
+
+The default builder creates a Twig environment when it builds the response. It enables strict variables but does not configure a persistent compiled-template cache or add your application's helper functions. Use a custom response builder if you need those settings.

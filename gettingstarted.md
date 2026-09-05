@@ -2,13 +2,12 @@
 # Getting Started
 
 ## Server Prerequisites
+
 - Get either nginx or apache2. You can use the built in PHP web server for testing as well.
-- Install PHP 8.1 or newer
+- Install PHP 8.4 or newer. The 3.3 source uses property hooks, even though the Composer requirement still says `>=8.1`.
 - Make sure you have Composer installed
-- Make sure you have access to one of the currently supported database backends:
-  - MySQL
-  - PostgreSQL
-  - SQLite
+- For database-backed applications, enable PDO and the driver for your database: `pdo_mysql`, `pdo_pgsql`, or `pdo_sqlite`.
+- Media processing also needs the tools used by the media types you enable. See [Media](media.md).
 
 ## Bootstrap a New Project
 - It is recommended that you install and use the Divergence command line tool to bootstrap your project. If you wish to do this manually feel free to look in the section ahead.
@@ -21,7 +20,7 @@ composer init
 divergence init
 ```
 
-What `divergence init` is expected to do:
+What `divergence init` does:
 
 - add `divergence/divergence` as a dependency
 - set up a PSR-4 namespace under `src/`
@@ -35,7 +34,7 @@ A video of this process is available below.
 - Make sure you initialize with Composer first.
 - In your terminal run this from inside your project directory:
 
-`composer require divergence/divergence`
+`composer require divergence/divergence:^3.3`
 
 - Copy the directories needed to bootstrap your project:
 
@@ -47,8 +46,7 @@ cp -R vendor/divergence/divergence/config ./
 mkdir -p var/sqlite
 ```
 
-- Run `php -S localhost:8080 -t ./public/` from your project root directory.
-- Visiting `localhost:8080` in your browser should show the default framework placeholder response.
+Finish the App and controller setup below before serving the project. The bundled `SiteRequestHandler` is a placeholder that calls `phpinfo()` and exits. It is not your application's home page, and you should not expose it on a public server.
 
 ### Establish Your Classes Directory
 - Make a source directory for yourself:
@@ -58,14 +56,16 @@ mkdir -p var/sqlite
 - Open your `composer.json` and add this config to give yourself a namespace:
 
 ```json
-"autoload": {
-    "psr-4": {
-        "project\\": "src/"
+{
+    "autoload": {
+        "psr-4": {
+            "project\\": "src/"
+        }
     }
-},
+}
 ```
 
-Remember that your namespace will be whatever you put in for `project`. For more details see Composer's documentation.
+Merge the `autoload` entry into your existing file; don't replace your dependencies. Your namespace will be whatever you put in for `project`.
 
 - Regenerate the autoloader:
 
@@ -76,8 +76,8 @@ composer dump-autoload
 ## Configure Database Access
 
 - Open `config/db.php` and give your new project database credentials.
-- The framework now ships example labels for MySQL, PostgreSQL, and SQLite, plus several test labels.
-- You can also use the Divergence command line tool for this.
+- The framework ships example labels for MySQL, PostgreSQL, and SQLite, plus test labels.
+- The CLI's configuration wizard is MySQL-oriented. Configure PostgreSQL and SQLite directly using the examples in [Database](database.md).
 
 [![asciicast](https://asciinema.org/a/gZHWY2tXwjxDgYPvzjIuUjhEX.png)](https://asciinema.org/a/gZHWY2tXwjxDgYPvzjIuUjhEX)
 
@@ -96,6 +96,8 @@ The shipped config currently includes labels like:
 - `tests-sqlite-files`
 
 If you want an uncommitted local override, create `config/db.dev.php`. `config/db.php` returns that file immediately when it exists.
+
+That override replaces the whole returned configuration, and its filename does not restrict it to development mode. Include every label the application needs. Select your label before the first model query; the defaults are `mysql` in production and `dev-mysql` in development.
 
 ## Take Over Control From The Framework
 - Create a new class `App` in your classes directory with the filename `App.php`. Simply extend `\Divergence\App`
@@ -177,6 +179,8 @@ $app->handleRequest();
 <h1>{{ message }}</h1>
 ```
 
+Now run `php -S localhost:8080 -t ./public/` from the project root and visit `http://localhost:8080`. You should see your message. The built-in server is for development; the public directory is the web root in either setup.
+
 ## Configuring nginx or apache2 Servers
 ### nginx
 ```nginx
@@ -210,10 +214,9 @@ server {
     DocumentRoot /var/www/yourproject/public
 
     <Directory /var/www/yourproject/public>
-        Options Indexes FollowSymLinks MultiViews
+        Options -Indexes -MultiViews +FollowSymLinks
         AllowOverride All
-        Order allow,deny
-        allow from all
+        Require all granted
     </Directory>
 </VirtualHost>
 ```
@@ -227,3 +230,5 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*) index.php [L,QSA]
 ```
+
+Adjust the hostname, document root, and PHP-FPM socket for your server. Enable Apache's rewrite module if you use the `.htaccess` example. These are basic routing examples; configure HTTPS and production logging for your deployment.
